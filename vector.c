@@ -10,7 +10,7 @@ int main(){
         int x[n], y[n], z[n];
 
 	printf("Enter vector X: ");
-	for(i = 0; i < n; i++);
+	for(i = 0; i < n; i++)
 		scanf("%d", &x[i]);
 	
 	printf("Enter vector Y: ");
