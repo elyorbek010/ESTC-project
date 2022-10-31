@@ -49,20 +49,3 @@ int main(void)
         }
     }
 }
-
-/**
-    Toggle LEDs.
-    while (true)
-    {
-        for(int j = 1000; j > 0; j /= 10){
-            for (int i = 0; i < (LEDnID / j % 10); i++)
-            {
-                bsp_board_led_invert(1);
-                nrf_delay_ms(500);
-                bsp_board_led_invert(1);
-                nrf_delay_ms(500);
-            }
-            nrf_delay_ms(2000);
-        }
-    }
- **/
