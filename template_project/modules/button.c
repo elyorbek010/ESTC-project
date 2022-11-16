@@ -9,7 +9,7 @@ void timeout_debounce_handler(void *p_context)
     {
         btn_pressed = true;
         btn_presses_n++;
-        app_timer_start(timer_dbl_clck, APP_TIMER_TICKS(500), NULL);
+        app_timer_start(timer_dbl_clck, APP_TIMER_TICKS(DOUBLE_CLICK_DELAY), NULL);
     }
     else
     {
@@ -19,13 +19,13 @@ void timeout_debounce_handler(void *p_context)
 
 void timeout_dbl_clck_handler(void *p_context)
 {
-    btn_double_click = (btn_presses_n >= 2) ? true : false;
+    btn_double_click = (btn_presses_n >= 2);
     btn_presses_n = 0;
 }
 
 void gpiote_evt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
-    app_timer_start(timer_debounce, APP_TIMER_TICKS(50), NULL);
+    app_timer_start(timer_debounce, APP_TIMER_TICKS(DEBOUNCE_DELAY), NULL);
 }
 
 void timer_init(void)

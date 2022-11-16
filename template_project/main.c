@@ -3,7 +3,6 @@
 #include "modules/button.h"
 
 #define DEVICE_ID 7201
-
 #define CYCLE_PERIOD 1000 // T=1000us = 1ms,  Freq = 1/T = 1kHz
 
 bool state; // State of the device leds
@@ -38,14 +37,10 @@ int main(void)
       }
     }
 
-    if (state)
+    if (state == true)
     {
       fluctuate_duty_cycle(); // change duty cycle 0-100-0 percent
       pwm_blink(t_on, CYCLE_PERIOD);
-    }
-    else
-    {
-      continue;
     }
   }
 }

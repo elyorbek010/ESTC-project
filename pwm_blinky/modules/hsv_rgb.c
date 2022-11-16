@@ -1,6 +1,6 @@
 #include "hsv_rgb.h"
 
-static float hue = 4;
+static float hue = 4; // 360 * 0.01 = 3.6 ~ 4
 static float saturation = 1;
 static float value = 1;
 

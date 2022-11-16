@@ -11,6 +11,8 @@
 #include "hsv_rgb.h"
 
 #define btn_pressed(idx) bsp_board_button_state_get(idx)
+#define DEBOUNCE_DELAY  50
+#define DOUBLE_CLICK_DELAY  500
 
 bool btn_pressed;
 bool btn_double_click;

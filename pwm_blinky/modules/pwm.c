@@ -47,18 +47,16 @@ void fluctuate_duty_cycle()
 static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
 static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
 
-#define n_top 10000
-#define n_step 100
-#define n_step2 25
-static uint16_t step = n_top / n_step;
-static uint16_t step2 = n_top / n_step2;
+#define TOP_VALUE1 10000
+#define STEP_N0 100
+#define STEP_N1 25
+static uint16_t step1 = TOP_VALUE1 / STEP_N0;
+static uint16_t step2 = TOP_VALUE1 / STEP_N1;
 
 nrf_pwm_values_individual_t pwm_seq0[4] = {{1000, 1000, 1000, 1000}};
-nrf_pwm_values_common_t pwm_seq1[n_step * 2];
-nrf_pwm_values_common_t pwm_seq2[n_step2 * 2];
+nrf_pwm_values_common_t pwm_seq1[STEP_N0 * 2];
+nrf_pwm_values_common_t pwm_seq2[STEP_N1 * 2];
 nrf_pwm_values_common_t pwm_seq3[1];
-
-uint16_t value1 = 0;
 
 nrf_pwm_sequence_t const seq0 = {
     .values.p_individual = pwm_seq0,
@@ -132,20 +130,22 @@ void pwm_init(void)
     APP_ERROR_CHECK(nrfx_pwm_init(&m_pwm0, &config0, NULL));
 
     // PWM1 - Green LED1
-    for (int i = 0; i < n_step; i++)
+    uint16_t value1 = 0;
+    for (int i = 0; i < STEP_N0; i++)
     {
-        value1 += step;
-        pwm_seq1[i] = value1;
-        pwm_seq1[n_step + i] = n_top - value1;
+        value1 += step1;
+        pwm_seq1[i] = value1; 
+        pwm_seq1[STEP_N0 + i] = TOP_VALUE1 - value1;
     }
     value1 = 0;
-    for (int i = 0; i < n_step2; i++)
+    for (int i = 0; i < STEP_N1; i++)
     {
         value1 += step2;
         pwm_seq2[i] = value1;
-        pwm_seq2[n_step2 + i] = n_top - value1;
+        pwm_seq2[STEP_N1 + i] = TOP_VALUE1 - value1;
     }
-    pwm_seq3[0] = n_top;
+    pwm_seq3[0] = TOP_VALUE1;
+    
     nrf_drv_pwm_config_t const config1 = {
         .output_pins = {
             LED_1 | NRFX_PWM_PIN_INVERTED,
@@ -156,7 +156,7 @@ void pwm_init(void)
         .irq_priority = NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY,
         .base_clock = (nrf_pwm_clk_t)NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK,
         .count_mode = (nrf_pwm_mode_t)NRFX_PWM_DEFAULT_CONFIG_COUNT_MODE,
-        .top_value = n_top,
+        .top_value = TOP_VALUE1,
         .load_mode = (nrf_pwm_dec_load_t)NRF_PWM_LOAD_COMMON,
         .step_mode = (nrf_pwm_dec_step_t)NRFX_PWM_DEFAULT_CONFIG_STEP_MODE,
     };

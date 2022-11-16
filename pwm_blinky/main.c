@@ -10,8 +10,8 @@
 extern bool btn_pressed;
 extern bool btn_double_click;
 
-APP_TIMER_DEF(timer_log);
-void timeout_log_handler(void *p_context);
+APP_TIMER_DEF(wake_up_timer);
+void timeout_wakeup(void *p_context);
 
 int main(void)
 {
@@ -21,8 +21,8 @@ int main(void)
   gpiote_init();
   pwm_init();
 
-  APP_ERROR_CHECK(app_timer_create(&timer_log, APP_TIMER_MODE_REPEATED, timeout_log_handler));
-  app_timer_start(timer_log, APP_TIMER_TICKS(30), NULL);
+  APP_ERROR_CHECK(app_timer_create(&wake_up_timer, APP_TIMER_MODE_REPEATED, timeout_wakeup));
+  app_timer_start(wake_up_timer, APP_TIMER_TICKS(30), NULL);
 
   uint8_t mode = 1;
 
@@ -67,7 +67,7 @@ int main(void)
   }
 }
 
-void timeout_log_handler(void *p_context)
+void timeout_wakeup(void *p_context)
 {
   hsv2rgb();
 }
