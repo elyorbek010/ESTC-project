@@ -1,16 +1,17 @@
 #include "modules/logs.h"
 #include "modules/pwm.h"
 #include "modules/button.h"
+#include "modules/hsv_rgb.h"
 
 #define DEVICE_ID 7201
-#define ID_HUE 4          // 360 * 0.01 = 3.6 ~ 4
-#define CYCLE_PERIOD 1000 // T=1000us = 1ms,  Freq = 1/T = 1kHz
+#define ID_HUE 4 // 360 * 0.01 = 3.6 ~ 4
+#define MODES_N 4
 
-uint8_t mode = 1;
-extern uint32_t t_on;
-extern uint32_t duty_cycle;
 extern bool btn_pressed;
 extern bool btn_double_click;
+
+APP_TIMER_DEF(timer_log);
+void timeout_log_handler(void *p_context);
 
 int main(void)
 {
@@ -18,47 +19,55 @@ int main(void)
   bsp_board_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS);
   timer_init();
   gpiote_init();
+  pwm_init();
+
+  APP_ERROR_CHECK(app_timer_create(&timer_log, APP_TIMER_MODE_REPEATED, timeout_log_handler));
+  app_timer_start(timer_log, APP_TIMER_TICKS(30), NULL);
+
+  uint8_t mode = 1;
 
   while (true)
   {
+
     send_log(); // Periodically send logs
-
-    if (mode > 4)
-    {
-      mode = 1;
-    }
-
     if (btn_double_click)
     {
       mode++;
       btn_double_click = false;
+      if (mode > MODES_N)
+      {
+        mode = 1; // reset mode
+      }
       NRF_LOG_INFO("Button is double clicked: mode = %u", mode);
+      pwm1(mode); // change mode indicator
     }
 
-    switch (mode)
+    while (btn_pressed)
     {
-    case 1:
-      no_modif();
-      break;
-    case 2:
-      hue_modif();
-      break;
-    case 3:
-      saturation_modif();
-      break;
-    case 4:
-      value_modif();
-      break;
-    default:
-      break;
+      switch (mode)
+      {
+      case 1:
+        no_modif();
+        break;
+      case 2:
+        hue_modif();
+        break;
+      case 3:
+        satur_modif();
+        break;
+      case 4:
+        value_modif();
+        break;
+      default:
+        continue;
+        break;
+      }
     }
-
-    if (btn_pressed)
-    {
-      NRF_LOG_INFO("Button is pressed \nDuty cycle: %lu%%", duty_cycle);
-      fluctuate_duty_cycle(); // change duty cycle 0-100-0 percent
-    }
-
-    pwm_blink(t_on, CYCLE_PERIOD);
+    __WFI();
   }
+}
+
+void timeout_log_handler(void *p_context)
+{
+  hsv2rgb();
 }

@@ -8,6 +8,8 @@
 #include "nrf_drv_clock.h"
 #include "nrfx_systick.h"
 
+#include "hsv_rgb.h"
+
 #define btn_pressed(idx) bsp_board_button_state_get(idx)
 
 bool btn_pressed;

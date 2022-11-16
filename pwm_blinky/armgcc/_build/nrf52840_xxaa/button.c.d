@@ -74,7 +74,50 @@ _build/nrf52840_xxaa/button.c.o: ..//modules/button.c \
  ../../../esl-nsdk/modules/nrfx/hal/nrf_clock.h \
  ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_power_clock.h \
  ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h ..//modules/hsv_rgb.h \
+ /usr/include/newlib/math.h ..//modules/logs.h \
+ ../../../esl-nsdk/components/libraries/log/nrf_log.h \
+ ../../../esl-nsdk/components/libraries/util/sdk_common.h \
+ /usr/include/newlib/string.h /usr/include/newlib/sys/string.h \
+ ../../../esl-nsdk/components/libraries/util/sdk_os.h \
+ ../../../esl-nsdk/components/libraries/util/app_util.h \
+ ../../../esl-nsdk/components/libraries/util/sdk_macros.h \
+ ../../../esl-nsdk/components/libraries/strerror/nrf_strerror.h \
+ ../../../esl-nsdk/components/libraries/log/src/nrf_log_internal.h \
+ ../../../esl-nsdk/components/libraries/log/nrf_log_types.h \
+ ../../../esl-nsdk/components/libraries/log/nrf_log_ctrl.h \
+ ../../../esl-nsdk/components/libraries/log/src/nrf_log_ctrl_internal.h \
+ ../../../esl-nsdk/components/libraries/log/nrf_log_backend_interface.h \
+ ../../../esl-nsdk/components/libraries/memobj/nrf_memobj.h \
+ /usr/include/newlib/stdlib.h /usr/include/newlib/machine/stdlib.h \
+ ../../../esl-nsdk/components/libraries/balloc/nrf_balloc.h \
+ ../../../esl-nsdk/components/libraries/log/nrf_log_default_backends.h \
+ ../../../esl-nsdk/components/libraries/log/nrf_log_backend_usb.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd.h \
+ ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_usbd.h \
+ ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_usbd.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_usbd.h \
+ ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_usbd_errata.h \
+ ../../../esl-nsdk/modules/nrfx/drivers/include/../src/nrfx_usbd_errata.h \
+ ../../../esl-nsdk/modules/nrfx/mdk/nrf_erratas.h \
+ ../../../esl-nsdk/modules/nrfx/mdk/nrf.h \
+ ../../../esl-nsdk/modules/nrfx/mdk/nrf51_erratas.h \
+ ../../../esl-nsdk/modules/nrfx/mdk/nrf52_erratas.h \
+ ../../../esl-nsdk/modules/nrfx/mdk/nrf53_erratas.h \
+ ../../../esl-nsdk/modules/nrfx/mdk/nrf91_erratas.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_types.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_request.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_descriptor.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_langid.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_class_base.h \
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h \
+ ..//modules/pwm.h \
+ ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h \
+ ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h \
+ ../../../esl-nsdk/components/libraries/bsp/bsp.h \
+ ../../../esl-nsdk/components/libraries/button/app_button.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h
 
 ..//modules/button.h:
 
@@ -245,3 +288,97 @@ _build/nrf52840_xxaa/button.c.o: ..//modules/button.c \
 ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h:
 
 ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h:
+
+..//modules/hsv_rgb.h:
+
+/usr/include/newlib/math.h:
+
+..//modules/logs.h:
+
+../../../esl-nsdk/components/libraries/log/nrf_log.h:
+
+../../../esl-nsdk/components/libraries/util/sdk_common.h:
+
+/usr/include/newlib/string.h:
+
+/usr/include/newlib/sys/string.h:
+
+../../../esl-nsdk/components/libraries/util/sdk_os.h:
+
+../../../esl-nsdk/components/libraries/util/app_util.h:
+
+../../../esl-nsdk/components/libraries/util/sdk_macros.h:
+
+../../../esl-nsdk/components/libraries/strerror/nrf_strerror.h:
+
+../../../esl-nsdk/components/libraries/log/src/nrf_log_internal.h:
+
+../../../esl-nsdk/components/libraries/log/nrf_log_types.h:
+
+../../../esl-nsdk/components/libraries/log/nrf_log_ctrl.h:
+
+../../../esl-nsdk/components/libraries/log/src/nrf_log_ctrl_internal.h:
+
+../../../esl-nsdk/components/libraries/log/nrf_log_backend_interface.h:
+
+../../../esl-nsdk/components/libraries/memobj/nrf_memobj.h:
+
+/usr/include/newlib/stdlib.h:
+
+/usr/include/newlib/machine/stdlib.h:
+
+../../../esl-nsdk/components/libraries/balloc/nrf_balloc.h:
+
+../../../esl-nsdk/components/libraries/log/nrf_log_default_backends.h:
+
+../../../esl-nsdk/components/libraries/log/nrf_log_backend_usb.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd.h:
+
+../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_usbd.h:
+
+../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_usbd.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_usbd.h:
+
+../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_usbd_errata.h:
+
+../../../esl-nsdk/modules/nrfx/drivers/include/../src/nrfx_usbd_errata.h:
+
+../../../esl-nsdk/modules/nrfx/mdk/nrf_erratas.h:
+
+../../../esl-nsdk/modules/nrfx/mdk/nrf.h:
+
+../../../esl-nsdk/modules/nrfx/mdk/nrf51_erratas.h:
+
+../../../esl-nsdk/modules/nrfx/mdk/nrf52_erratas.h:
+
+../../../esl-nsdk/modules/nrfx/mdk/nrf53_erratas.h:
+
+../../../esl-nsdk/modules/nrfx/mdk/nrf91_erratas.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd_types.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd_request.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd_descriptor.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd_langid.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd_class_base.h:
+
+../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h:
+
+..//modules/pwm.h:
+
+../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h:
+
+../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:
+
+../../../esl-nsdk/components/libraries/bsp/bsp.h:
+
+../../../esl-nsdk/components/libraries/button/app_button.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:

@@ -63,10 +63,12 @@ SRC_FILES += \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf.c \
   $(SDK_ROOT)/external/fprintf/nrf_fprintf_format.c \
   $(SDK_ROOT)/external/utf_converter/utf.c \
+  $(SDK_ROOT)/modules/nrfx/drivers/src/nrfx_pwm.c \
   $(PROJ_DIR)/main.c \
   $(PROJ_DIR)/modules/button.c \
   $(PROJ_DIR)/modules/logs.c \
   $(PROJ_DIR)/modules/pwm.c \
+  $(PROJ_DIR)/modules/hsv_rgb.c \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
 
 # Include folders common to all targets
