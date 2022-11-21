@@ -84,4 +84,5 @@ int main(void)
 
 void timeout_wake_up_handler(void *p_context)
 {
+  // NRF_LOG_INFO("wake up");
 }

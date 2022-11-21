@@ -49,25 +49,25 @@ void timeout_debounce_handler(void *p_context)
     if (button.status == CLICKED || button.status == DOUBLE_CLICKED)
     { // if status was set but was not used then reset it
         button.status = IDLE;
-        NRF_LOG_INFO("CLICKED || DOUBLE CLICKED unused - > IDLE");
+        //NRF_LOG_INFO("CLICKED || DOUBLE CLICKED unused - > IDLE");
     }
 
     if (button.status == IDLE && button.state == RELEASED && bsp_board_button_state_get(button.idx) == true)
     {
         button.state = PUSHED;
-        NRF_LOG_INFO("PUSHED");
+        //NRF_LOG_INFO("PUSHED");
     }
     else if (button.status == IDLE && button.state == PUSHED && bsp_board_button_state_get(button.idx) == false)
     {
         button.state = RELEASED;
         button.clicks_n++;
-        NRF_LOG_INFO("RELEASED");
+        //NRF_LOG_INFO("RELEASED");
     }
     else if (button.status == PRESSED && button.state == PUSHED && bsp_board_button_state_get(button.idx) == false)
     {
         button.status = IDLE;
         button.state = RELEASED;
-        NRF_LOG_INFO("RELEASED FROM LONG PRESS");
+        //NRF_LOG_INFO("RELEASED FROM LONG PRESS");
     }
     app_timer_start(timer_btn_effect, APP_TIMER_TICKS(BUTTON_EFFECT_DELAY), NULL);
 }
@@ -77,19 +77,19 @@ void timeout_btn_effect_handler(void *p_context)
     if (button.status == IDLE && button.state == PUSHED && bsp_board_button_state_get(button.idx) == true)
     {
         button.status = PRESSED;
-        NRF_LOG_INFO("PRESSED");
+        //NRF_LOG_INFO("PRESSED");
     }
     else if (button.clicks_n == 1)
     {
         button.status = CLICKED;
         button.clicks_n = 0;
-        NRF_LOG_INFO("CLICKED");
+        //NRF_LOG_INFO("CLICKED");
     }
     else if (button.clicks_n > 1)
     {
         button.status = DOUBLE_CLICKED;
         button.clicks_n = 0;
-        NRF_LOG_INFO("DOUBLE_CLICKED");
+        //NRF_LOG_INFO("DOUBLE_CLICKED");
     }
 }
 
