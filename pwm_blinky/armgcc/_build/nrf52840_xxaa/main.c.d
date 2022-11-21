@@ -93,30 +93,31 @@ _build/nrf52840_xxaa/main.c.o: ..//main.c ..//modules/logs.h \
  ../../../esl-nsdk/components/libraries/usbd/app_usbd_langid.h \
  ../../../esl-nsdk/components/libraries/usbd/app_usbd_class_base.h \
  ../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h \
- ..//modules/pwm.h ../../../esl-nsdk/components/boards/boards.h \
+ ..//modules/button.h \
+ ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_gpiote.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_gpiote.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_gpio.h \
+ ../../../esl-nsdk/components/boards/boards.h \
  ../../../esl-nsdk/modules/nrfx/hal/nrf_gpio.h \
  ../../../esl-nsdk/components/boards/pca10059.h \
- ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h ..//modules/logs.h \
- ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h \
- ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h \
- ../../../esl-nsdk/components/libraries/util/app_error.h \
- ../../../esl-nsdk/components/libraries/bsp/bsp.h \
- ../../../esl-nsdk/components/libraries/button/app_button.h \
  ../../../esl-nsdk/components/libraries/timer/app_timer.h \
+ ../../../esl-nsdk/components/libraries/util/app_error.h \
  ../../../esl-nsdk/components/libraries/sortlist/nrf_sortlist.h \
+ ../../../esl-nsdk/components/libraries/timer/drv_rtc.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_rtc.h \
  ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_clock.h \
  ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_clock.h \
  ../../../esl-nsdk/modules/nrfx/hal/nrf_clock.h \
  ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_power_clock.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h ..//modules/button.h \
- ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_gpiote.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_gpiote.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_gpio.h \
- ../../../esl-nsdk/components/libraries/timer/drv_rtc.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_rtc.h ..//modules/hsv_rgb.h \
- /usr/include/newlib/math.h ..//modules/pwm.h ..//modules/hsv_rgb.h
+ ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h ..//modules/logs.h \
+ ..//modules/hsv_rgb.h /usr/include/newlib/math.h ..//modules/pwm.h \
+ ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h \
+ ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h \
+ ../../../esl-nsdk/components/libraries/bsp/bsp.h \
+ ../../../esl-nsdk/components/libraries/button/app_button.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h ..//modules/pwm.h
 
 ..//modules/logs.h:
 
@@ -328,7 +329,13 @@ _build/nrf52840_xxaa/main.c.o: ..//main.c ..//modules/logs.h \
 
 ../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h:
 
-..//modules/pwm.h:
+..//modules/button.h:
+
+../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_gpiote.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_gpiote.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_gpio.h:
 
 ../../../esl-nsdk/components/boards/boards.h:
 
@@ -336,27 +343,15 @@ _build/nrf52840_xxaa/main.c.o: ..//main.c ..//modules/logs.h \
 
 ../../../esl-nsdk/components/boards/pca10059.h:
 
-../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h:
-
-..//modules/logs.h:
-
-../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h:
-
-../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:
+../../../esl-nsdk/components/libraries/timer/app_timer.h:
 
 ../../../esl-nsdk/components/libraries/util/app_error.h:
 
-../../../esl-nsdk/components/libraries/bsp/bsp.h:
-
-../../../esl-nsdk/components/libraries/button/app_button.h:
-
-../../../esl-nsdk/components/libraries/timer/app_timer.h:
-
 ../../../esl-nsdk/components/libraries/sortlist/nrf_sortlist.h:
+
+../../../esl-nsdk/components/libraries/timer/drv_rtc.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_rtc.h:
 
 ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_clock.h:
 
@@ -366,19 +361,11 @@ _build/nrf52840_xxaa/main.c.o: ..//main.c ..//modules/logs.h \
 
 ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_power_clock.h:
 
-../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:
+../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h:
 
-..//modules/button.h:
+../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h:
 
-../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_gpiote.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_gpiote.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_gpio.h:
-
-../../../esl-nsdk/components/libraries/timer/drv_rtc.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_rtc.h:
+..//modules/logs.h:
 
 ..//modules/hsv_rgb.h:
 
@@ -386,4 +373,16 @@ _build/nrf52840_xxaa/main.c.o: ..//main.c ..//modules/logs.h \
 
 ..//modules/pwm.h:
 
-..//modules/hsv_rgb.h:
+../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h:
+
+../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:
+
+../../../esl-nsdk/components/libraries/bsp/bsp.h:
+
+../../../esl-nsdk/components/libraries/button/app_button.h:
+
+../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:
+
+..//modules/pwm.h:

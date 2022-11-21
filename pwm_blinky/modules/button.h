@@ -7,19 +7,36 @@
 #include "drv_rtc.h"
 #include "nrf_drv_clock.h"
 #include "nrfx_systick.h"
+#include "logs.h"
 
-#include "hsv_rgb.h"
+typedef enum
+{
+    RELEASED,
+    PUSHED
+} my_button_state_t;
 
-#define btn_pressed(idx) bsp_board_button_state_get(idx)
-#define DEBOUNCE_DELAY  50
-#define DOUBLE_CLICK_DELAY  500
+typedef enum
+{
+    IDLE,
+    CLICKED,
+    PRESSED,
+    DOUBLE_CLICKED
+} my_button_status_t;
 
-bool btn_pressed;
-bool btn_double_click;
-uint8_t btn_presses_n;
+typedef struct
+{
+    nrfx_gpiote_pin_t pin;
+    uint32_t idx;
+    uint32_t clicks_n;
+    my_button_state_t state;
+    my_button_status_t status;
+} my_button_t;
+
+bool is_clicked(void);
+bool is_pressed(void);
+bool is_double_clicked(void);
 
 void timer_init(void);
-
 void gpiote_init(void);
 
 #endif // BUTTON_H

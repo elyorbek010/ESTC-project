@@ -74,8 +74,7 @@ _build/nrf52840_xxaa/button.c.o: ..//modules/button.c \
  ../../../esl-nsdk/modules/nrfx/hal/nrf_clock.h \
  ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_power_clock.h \
  ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_systick.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h ..//modules/hsv_rgb.h \
- /usr/include/newlib/math.h ..//modules/logs.h \
+ ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h ..//modules/logs.h \
  ../../../esl-nsdk/components/libraries/log/nrf_log.h \
  ../../../esl-nsdk/components/libraries/util/sdk_common.h \
  /usr/include/newlib/string.h /usr/include/newlib/sys/string.h \
@@ -110,14 +109,7 @@ _build/nrf52840_xxaa/button.c.o: ..//modules/button.c \
  ../../../esl-nsdk/components/libraries/usbd/app_usbd_descriptor.h \
  ../../../esl-nsdk/components/libraries/usbd/app_usbd_langid.h \
  ../../../esl-nsdk/components/libraries/usbd/app_usbd_class_base.h \
- ../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h \
- ..//modules/pwm.h \
- ../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h \
- ../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h \
- ../../../esl-nsdk/components/libraries/bsp/bsp.h \
- ../../../esl-nsdk/components/libraries/button/app_button.h \
- ../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h
+ ../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h
 
 ..//modules/button.h:
 
@@ -289,10 +281,6 @@ _build/nrf52840_xxaa/button.c.o: ..//modules/button.c \
 
 ../../../esl-nsdk/modules/nrfx/hal/nrf_systick.h:
 
-..//modules/hsv_rgb.h:
-
-/usr/include/newlib/math.h:
-
 ..//modules/logs.h:
 
 ../../../esl-nsdk/components/libraries/log/nrf_log.h:
@@ -368,17 +356,3 @@ _build/nrf52840_xxaa/button.c.o: ..//modules/button.c \
 ../../../esl-nsdk/components/libraries/usbd/app_usbd_class_base.h:
 
 ../../../esl-nsdk/components/libraries/usbd/app_usbd_serial_num.h:
-
-..//modules/pwm.h:
-
-../../../esl-nsdk/integration/nrfx/legacy/nrf_drv_pwm.h:
-
-../../../esl-nsdk/modules/nrfx/drivers/include/nrfx_pwm.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:
-
-../../../esl-nsdk/components/libraries/bsp/bsp.h:
-
-../../../esl-nsdk/components/libraries/button/app_button.h:
-
-../../../esl-nsdk/modules/nrfx/hal/nrf_pwm.h:

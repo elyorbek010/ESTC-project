@@ -5,14 +5,14 @@
 #include "logs.h"
 #include "pwm.h"
 
-void hsv2rgb(void);
+void hsv2rgb(float, float, float, uint32_t *, uint32_t *, uint32_t *);
 
 void no_modif(void);
 
-void hue_modif(void);
+void hue_modif(float *);
 
-void satur_modif(void);
+void satur_modif(float *);
 
-void value_modif(void);
+void val_modif(float *);
 
 #endif // HSV_RGB_H

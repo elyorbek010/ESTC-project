@@ -1,124 +1,88 @@
 #include "pwm.h"
-/*
-static uint16_t led_index = -1;
 
-void pwm_blink(uint32_t t_on_, uint32_t t_period)
+static nrf_drv_pwm_t pwm_indicator = NRF_DRV_PWM_INSTANCE(0);
+static nrf_drv_pwm_t pwm_rgb = NRF_DRV_PWM_INSTANCE(1);
+
+#define TOP_VALUE 10000
+#define STEPS_SLOW 100
+#define STEPS_FAST 25
+
+static const uint16_t step_slow = TOP_VALUE / STEPS_SLOW;
+static const uint16_t step_fast = TOP_VALUE / STEPS_FAST;
+
+nrf_pwm_values_individual_t rgb_seq_vals[3];
+nrf_pwm_values_common_t indicator_seq_off_vals[1] = {0};
+nrf_pwm_values_common_t indicator_seq_slow_vals[STEPS_SLOW * 2];
+nrf_pwm_values_common_t indicator_seq_fast_vals[STEPS_FAST * 2];
+nrf_pwm_values_common_t indicator_seq_on_vals[1] = {TOP_VALUE};
+
+nrf_pwm_sequence_t const seq_rgb = {
+    .values.p_individual = rgb_seq_vals,
+    .length = NRF_PWM_VALUES_LENGTH(rgb_seq_vals),
+    .repeats = 0,
+    .end_delay = 0};
+
+nrf_pwm_sequence_t const seq_off = {
+    .values.p_common = indicator_seq_off_vals,
+    .length = NRF_PWM_VALUES_LENGTH(indicator_seq_off_vals),
+    .repeats = 0,
+    .end_delay = 0};
+
+nrf_pwm_sequence_t const seq_slow = {
+    .values.p_common = indicator_seq_slow_vals,
+    .length = NRF_PWM_VALUES_LENGTH(indicator_seq_slow_vals),
+    .repeats = 0,
+    .end_delay = 0};
+
+nrf_pwm_sequence_t const seq_fast = {
+    .values.p_common = indicator_seq_fast_vals,
+    .length = NRF_PWM_VALUES_LENGTH(indicator_seq_fast_vals),
+    .repeats = 0,
+    .end_delay = 0};
+
+nrf_pwm_sequence_t const seq_on = {
+    .values.p_common = indicator_seq_on_vals,
+    .length = NRF_PWM_VALUES_LENGTH(indicator_seq_on_vals),
+    .repeats = 0,
+    .end_delay = 0};
+
+void pwm_rgb_update(uint32_t red, uint32_t green, uint32_t blue)
 {
-    uint32_t t_off_ = t_period - t_on_;
-
-    nrfx_systick_state_t time_cap;
-    nrfx_systick_get(&time_cap);
-
-    while (nrfx_systick_test(&time_cap, t_on_) == false)
-    {
-        bsp_board_led_on(led_index);
-    }
-
-    nrfx_systick_get(&time_cap);
-
-    while (nrfx_systick_test(&time_cap, t_off_) == false)
-    {
-        bsp_board_led_off(led_index);
-    }
+    // NRF_LOG_INFO("LED2_R = %u  LED2_G = %u  , LED2_B = %u", red, green, blue);
+    float scale_factor = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE / (1.0 * 255);
+    rgb_seq_vals->channel_0 = (uint32_t)(red * scale_factor);
+    rgb_seq_vals->channel_1 = (uint32_t)(green * scale_factor);
+    rgb_seq_vals->channel_2 = (uint32_t)(blue * scale_factor);
+    nrfx_pwm_simple_playback(&pwm_rgb, &seq_rgb, 1, NRF_DRV_PWM_FLAG_LOOP);
 }
 
-void fluctuate_duty_cycle()
-{
-    if (t_on == (uint32_t)CYCLE_PERIOD)
-    {
-        duty_cycle_up = false;
-    }
-    else if (t_on == 0)
-    {
-        duty_cycle_up = true;
-        led_index++;
-        if (led_index == LEDS_NUMBER)
-        {
-            led_index = 0;
-        }
-    }
-
-    t_on = duty_cycle_up ? (t_on + 1) : (t_on - 1);     //Increment if up-flag is set, decrement otherwise
-
-    duty_cycle = t_on * 100 / CYCLE_PERIOD;
-}
-*/
-
-static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
-static nrf_drv_pwm_t m_pwm1 = NRF_DRV_PWM_INSTANCE(1);
-
-#define TOP_VALUE1 10000
-#define STEP_N0 100
-#define STEP_N1 25
-static uint16_t step1 = TOP_VALUE1 / STEP_N0;
-static uint16_t step2 = TOP_VALUE1 / STEP_N1;
-
-nrf_pwm_values_individual_t pwm_seq0[4] = {{1000, 1000, 1000, 1000}};
-nrf_pwm_values_common_t pwm_seq1[STEP_N0 * 2];
-nrf_pwm_values_common_t pwm_seq2[STEP_N1 * 2];
-nrf_pwm_values_common_t pwm_seq3[1];
-
-nrf_pwm_sequence_t const seq0 = {
-    .values.p_individual = pwm_seq0,
-    .length = NRF_PWM_VALUES_LENGTH(pwm_seq0),
-    .repeats = 0,
-    .end_delay = 0};
-
-nrf_pwm_sequence_t const seq1 = {
-    .values.p_common = pwm_seq1,
-    .length = NRF_PWM_VALUES_LENGTH(pwm_seq1),
-    .repeats = 0,
-    .end_delay = 0};
-
-nrf_pwm_sequence_t const seq2 = {
-    .values.p_common = pwm_seq2,
-    .length = NRF_PWM_VALUES_LENGTH(pwm_seq2),
-    .repeats = 0,
-    .end_delay = 0};
-
-nrf_pwm_sequence_t const seq3 = {
-    .values.p_common = pwm_seq3,
-    .length = NRF_PWM_VALUES_LENGTH(pwm_seq3),
-    .repeats = 0,
-    .end_delay = 0};
-
-void pwm0(uint16_t brightness_r, uint16_t brightness_g, uint16_t brightness_b)
-{
-    NRF_LOG_INFO("LED2_R = %u  LED2_G = %u  , LED2_B = %u", brightness_r, brightness_g, brightness_b);
-    pwm_seq0->channel_1 = (uint16_t)(brightness_r * (((float)1000)/255));
-    pwm_seq0->channel_2 = (uint16_t)(brightness_g * (((float)1000)/255));
-    pwm_seq0->channel_3 = (uint16_t)(brightness_b * (((float)1000)/255));
-    nrfx_pwm_simple_playback(&m_pwm0, &seq0, 1, NRF_DRV_PWM_FLAG_LOOP);
-}
-
-void pwm1(uint8_t mode)
+void pwm_indicator_update(my_pwm_modes_t mode)
 {
     switch (mode)
     {
-    case 1:
-        nrfx_pwm_stop(&m_pwm1, true);
+    case OFF:
+        nrfx_pwm_simple_playback(&pwm_indicator, &seq_off, 1, NRF_DRV_PWM_FLAG_LOOP);
         break;
-    case 2:
-        nrfx_pwm_simple_playback(&m_pwm1, &seq1, 1, NRF_DRV_PWM_FLAG_LOOP);
+    case SLOW_BLINK:
+        nrfx_pwm_simple_playback(&pwm_indicator, &seq_slow, 1, NRF_DRV_PWM_FLAG_LOOP);
         break;
-    case 3:
-        nrfx_pwm_simple_playback(&m_pwm1, &seq2, 1, NRF_DRV_PWM_FLAG_LOOP);
+    case FAST_BLINK:
+        nrfx_pwm_simple_playback(&pwm_indicator, &seq_fast, 1, NRF_DRV_PWM_FLAG_LOOP);
         break;
-    case 4:
-        nrfx_pwm_simple_playback(&m_pwm1, &seq3, 1, NRF_DRV_PWM_FLAG_LOOP);
+    case ON:
+        nrfx_pwm_simple_playback(&pwm_indicator, &seq_on, 1, NRF_DRV_PWM_FLAG_LOOP);
         break;
     }
 }
 
 void pwm_init(void)
-{ // PWM0 - RGB
-    nrf_drv_pwm_config_t const config0 = {
+{ // PWM - RGB
+    nrf_drv_pwm_config_t const config_rgb = {
         .output_pins = {
-            NRFX_PWM_PIN_NOT_USED,
             LED_2 | NRFX_PWM_PIN_INVERTED,
             LED_3 | NRFX_PWM_PIN_INVERTED,
             LED_4 | NRFX_PWM_PIN_INVERTED,
-        },
+            NRFX_PWM_PIN_NOT_USED},
         .irq_priority = NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY,
         .base_clock = (nrf_pwm_clk_t)NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK,
         .count_mode = (nrf_pwm_mode_t)NRFX_PWM_DEFAULT_CONFIG_COUNT_MODE,
@@ -127,26 +91,24 @@ void pwm_init(void)
         .step_mode = (nrf_pwm_dec_step_t)NRFX_PWM_DEFAULT_CONFIG_STEP_MODE,
     };
 
-    APP_ERROR_CHECK(nrfx_pwm_init(&m_pwm0, &config0, NULL));
+    APP_ERROR_CHECK(nrfx_pwm_init(&pwm_rgb, &config_rgb, NULL));
 
-    // PWM1 - Green LED1
-    uint16_t value1 = 0;
-    for (int i = 0; i < STEP_N0; i++)
+    // PWM indicator
+    indicator_seq_slow_vals[STEPS_SLOW] = TOP_VALUE;
+    for (uint32_t i = 1; i < STEPS_SLOW; i++)
     {
-        value1 += step1;
-        pwm_seq1[i] = value1; 
-        pwm_seq1[STEP_N0 + i] = TOP_VALUE1 - value1;
+        indicator_seq_slow_vals[i] = indicator_seq_slow_vals[i-1] + step_slow;
+        indicator_seq_slow_vals[STEPS_SLOW + i] = TOP_VALUE - indicator_seq_slow_vals[i];
     }
-    value1 = 0;
-    for (int i = 0; i < STEP_N1; i++)
+
+    indicator_seq_fast_vals[STEPS_FAST] = TOP_VALUE;
+    for (uint32_t i = 1; i < STEPS_FAST; i++)
     {
-        value1 += step2;
-        pwm_seq2[i] = value1;
-        pwm_seq2[STEP_N1 + i] = TOP_VALUE1 - value1;
+        indicator_seq_fast_vals[i] = indicator_seq_fast_vals[i-1] + step_fast;
+        indicator_seq_fast_vals[STEPS_FAST + i] = TOP_VALUE - indicator_seq_fast_vals[i];
     }
-    pwm_seq3[0] = TOP_VALUE1;
-    
-    nrf_drv_pwm_config_t const config1 = {
+
+    nrf_drv_pwm_config_t const config_indicator = {
         .output_pins = {
             LED_1 | NRFX_PWM_PIN_INVERTED,
             NRFX_PWM_PIN_NOT_USED,
@@ -156,10 +118,10 @@ void pwm_init(void)
         .irq_priority = NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY,
         .base_clock = (nrf_pwm_clk_t)NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK,
         .count_mode = (nrf_pwm_mode_t)NRFX_PWM_DEFAULT_CONFIG_COUNT_MODE,
-        .top_value = TOP_VALUE1,
+        .top_value = TOP_VALUE,
         .load_mode = (nrf_pwm_dec_load_t)NRF_PWM_LOAD_COMMON,
         .step_mode = (nrf_pwm_dec_step_t)NRFX_PWM_DEFAULT_CONFIG_STEP_MODE,
     };
 
-    APP_ERROR_CHECK(nrfx_pwm_init(&m_pwm1, &config1, NULL));
+    APP_ERROR_CHECK(nrfx_pwm_init(&pwm_indicator, &config_indicator, NULL));
 }

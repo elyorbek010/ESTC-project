@@ -6,7 +6,7 @@ DFU_PORT         ?= /dev/ttyACM0
 
 
 SDK_ROOT ?= ../../../esl-nsdk
-PROJ_DIR := ../
+PROJ_DIR ?= ../
 
 $(OUTPUT_DIRECTORY)/nrf52840_xxaa.out: \
   LINKER_SCRIPT  := blinky_gcc_nrf52.ld
@@ -67,8 +67,8 @@ SRC_FILES += \
   $(PROJ_DIR)/main.c \
   $(PROJ_DIR)/modules/button.c \
   $(PROJ_DIR)/modules/logs.c \
-  $(PROJ_DIR)/modules/pwm.c \
   $(PROJ_DIR)/modules/hsv_rgb.c \
+  $(PROJ_DIR)/modules/pwm.c \
   $(SDK_ROOT)/modules/nrfx/mdk/system_nrf52840.c \
 
 # Include folders common to all targets

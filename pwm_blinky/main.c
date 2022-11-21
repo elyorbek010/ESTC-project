@@ -1,17 +1,21 @@
 #include "modules/logs.h"
-#include "modules/pwm.h"
 #include "modules/button.h"
 #include "modules/hsv_rgb.h"
+#include "modules/pwm.h"
 
 #define DEVICE_ID 7201
-#define ID_HUE 4 // 360 * 0.01 = 3.6 ~ 4
-#define MODES_N 4
 
-extern bool btn_pressed;
-extern bool btn_double_click;
+APP_TIMER_DEF(wake_up);
+void timeout_wake_up_handler(void *p_context);
 
-APP_TIMER_DEF(wake_up_timer);
-void timeout_wakeup(void *p_context);
+static const uint8_t MODES_N = 4;
+typedef enum
+{
+  NO_MODIFY,
+  HUE_MODIFY,
+  SATURATION_MODIFY,
+  VALUE_MODIFY
+} my_modes_t;
 
 int main(void)
 {
@@ -21,53 +25,63 @@ int main(void)
   gpiote_init();
   pwm_init();
 
-  APP_ERROR_CHECK(app_timer_create(&wake_up_timer, APP_TIMER_MODE_REPEATED, timeout_wakeup));
-  app_timer_start(wake_up_timer, APP_TIMER_TICKS(30), NULL);
+  app_timer_create(&wake_up, APP_TIMER_MODE_REPEATED, timeout_wake_up_handler);
+  app_timer_start(wake_up, APP_TIMER_TICKS(50), NULL);
 
-  uint8_t mode = 1;
+  float hue = 4;        // 360 * 0.01 = 3.6 ~ 4
+  float saturation = 1; // 100%
+  float value = 1;      // 100%
+
+  uint32_t red;
+  uint32_t green;
+  uint32_t blue;
+
+  my_modes_t mode = NO_MODIFY;
+
+  hsv2rgb(hue, saturation, value, &red, &green, &blue);
+  pwm_indicator_update(mode);
+  pwm_rgb_update(red, green, blue);
 
   while (true)
   {
-
     send_log(); // Periodically send logs
-    if (btn_double_click)
+
+    if (is_double_clicked()) // change mode when button double clicked
     {
       mode++;
-      btn_double_click = false;
-      if (mode > MODES_N)
+      if (mode >= MODES_N)
       {
-        mode = 1; // reset mode
+        mode = NO_MODIFY;
       }
-      NRF_LOG_INFO("Button is double clicked: mode = %u", mode);
-      pwm1(mode); // change mode indicator
+      pwm_indicator_update(mode);
     }
 
-    while (btn_pressed)
+    while (is_pressed()) // change hsv values when holding button pressed
     {
       switch (mode)
       {
-      case 1:
+      case NO_MODIFY:
         no_modif();
         break;
-      case 2:
-        hue_modif();
+      case HUE_MODIFY:
+        hue_modif(&hue);
         break;
-      case 3:
-        satur_modif();
+      case SATURATION_MODIFY:
+        satur_modif(&saturation);
         break;
-      case 4:
-        value_modif();
+      case VALUE_MODIFY:
+        val_modif(&value);
         break;
       default:
-        continue;
         break;
       }
+      hsv2rgb(hue, saturation, value, &red, &green, &blue);
+      pwm_rgb_update(red, green, blue);
     }
     __WFI();
   }
 }
 
-void timeout_wakeup(void *p_context)
+void timeout_wake_up_handler(void *p_context)
 {
-  hsv2rgb();
 }

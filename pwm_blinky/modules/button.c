@@ -1,26 +1,96 @@
 #include "button.h"
 
-APP_TIMER_DEF(timer_debounce);
-APP_TIMER_DEF(timer_dbl_clck);
+static const uint32_t DEBOUNCE_DELAY = 50;
+static const uint32_t BUTTON_EFFECT_DELAY = 500;
 
-void timeout_debounce_handler(void *p_context)
+APP_TIMER_DEF(timer_debounce);
+APP_TIMER_DEF(timer_btn_effect);
+
+my_button_t button = {
+    BUTTON_1,
+    0,
+    0,
+    RELEASED,
+    IDLE};
+
+bool is_clicked(void)
 {
-    if (btn_pressed(BSP_BOARD_BUTTON_0))
+    if (button.status == CLICKED)
     {
-        btn_pressed = true;
-        btn_presses_n++;
-        app_timer_start(timer_dbl_clck, APP_TIMER_TICKS(DOUBLE_CLICK_DELAY), NULL);
+        button.status = IDLE;
+        return true;
     }
     else
     {
-        btn_pressed = false;
+        return false;
     }
 }
 
-void timeout_dbl_clck_handler(void *p_context)
+bool is_pressed(void)
 {
-    btn_double_click = (btn_presses_n >= 2) ? true : false;
-    btn_presses_n = 0;
+    return (button.status == PRESSED);
+}
+
+bool is_double_clicked(void)
+{
+    if (button.status == DOUBLE_CLICKED)
+    {
+        button.status = IDLE;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void timeout_debounce_handler(void *p_context)
+{
+    if (button.status == CLICKED || button.status == DOUBLE_CLICKED)
+    { // if status was set but was not used then reset it
+        button.status = IDLE;
+        NRF_LOG_INFO("CLICKED || DOUBLE CLICKED unused - > IDLE");
+    }
+
+    if (button.status == IDLE && button.state == RELEASED && bsp_board_button_state_get(button.idx) == true)
+    {
+        button.state = PUSHED;
+        NRF_LOG_INFO("PUSHED");
+    }
+    else if (button.status == IDLE && button.state == PUSHED && bsp_board_button_state_get(button.idx) == false)
+    {
+        button.state = RELEASED;
+        button.clicks_n++;
+        NRF_LOG_INFO("RELEASED");
+    }
+    else if (button.status == PRESSED && button.state == PUSHED && bsp_board_button_state_get(button.idx) == false)
+    {
+        button.status = IDLE;
+        button.state = RELEASED;
+        NRF_LOG_INFO("RELEASED FROM LONG PRESS");
+    }
+    app_timer_start(timer_btn_effect, APP_TIMER_TICKS(BUTTON_EFFECT_DELAY), NULL);
+}
+
+void timeout_btn_effect_handler(void *p_context)
+{
+    if (button.status == IDLE && button.state == PUSHED && bsp_board_button_state_get(button.idx) == true)
+    {
+        button.status = PRESSED;
+        NRF_LOG_INFO("PRESSED");
+    }
+    else if (button.clicks_n == 1)
+    {
+        button.status = CLICKED;
+        button.clicks_n = 0;
+        NRF_LOG_INFO("CLICKED");
+    }
+    else if (button.clicks_n > 1)
+    {
+        button.status = DOUBLE_CLICKED;
+        button.clicks_n = 0;
+        NRF_LOG_INFO("DOUBLE_CLICKED");
+    }
 }
 
 void gpiote_evt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
@@ -30,7 +100,7 @@ void gpiote_evt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 
 void timer_init(void)
 {
-    //nrfx_systick_init();
+    // nrfx_systick_init();
 
     ret_code_t ret;
     ret = app_timer_init();
@@ -39,7 +109,7 @@ void timer_init(void)
     ret = app_timer_create(&timer_debounce, APP_TIMER_MODE_SINGLE_SHOT, timeout_debounce_handler);
     APP_ERROR_CHECK(ret);
 
-    ret = app_timer_create(&timer_dbl_clck, APP_TIMER_MODE_SINGLE_SHOT, timeout_dbl_clck_handler);
+    ret = app_timer_create(&timer_btn_effect, APP_TIMER_MODE_SINGLE_SHOT, timeout_btn_effect_handler);
     APP_ERROR_CHECK(ret);
 }
 
