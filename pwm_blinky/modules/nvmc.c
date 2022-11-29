@@ -4,7 +4,7 @@
 #define PAGE_SIZE 4096
 #define WORD_SIZE 4
 #define NRF_DFU_APP_DATA_AREA_SIZE (3 * PAGE_SIZE)
-#define VALIDITY_KEY 0xA000A000
+#define VALIDITY_KEY 0xAAAA0000
 
 static uint32_t stack_top;
 static const uint32_t my_flash_page_1_addr = BOOTLOADER_START_ADDR - NRF_DFU_APP_DATA_AREA_SIZE;
@@ -75,6 +75,6 @@ uint32_t pop_from_flash(void)
     uint32_t data = *(my_stack + stack_top);
     NRF_LOG_INFO("Value popped is : %u from address: %p", data, my_stack + stack_top);
     reallocate_stack();
-    nrf_nvmc_write_word((uint32_t)(my_stack + 1), stack_top)
+    nrf_nvmc_write_word((uint32_t)(my_stack + 1), stack_top);
     return data;
 }

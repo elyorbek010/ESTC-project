@@ -41,6 +41,10 @@ int main(void)
     value = ((float)pop_from_flash()) / 100;      // turn percent into float value < 1.0
     saturation = ((float)pop_from_flash()) / 100; // turn percent into float value < 1.0
     hue = (float)pop_from_flash();
+
+    push_to_flash((uint32_t)(hue));
+    push_to_flash((uint32_t)(saturation * 100)); // turn into percent value
+    push_to_flash((uint32_t)(value * 100));      // turn into percent value
   }
   else
   {
@@ -78,13 +82,13 @@ int main(void)
       switch (mode)
       {
       case NO_INPUT:
-        //no_input();
+        // no_input();
         if (data_is_modified)
         {
           NRF_LOG_INFO("writing to flash");
           push_to_flash((uint32_t)(hue));
-          push_to_flash((uint32_t)(saturation * 100));  // turn into percent value
-          push_to_flash((uint32_t)(value * 100));       // turn into percent value
+          push_to_flash((uint32_t)(saturation * 100)); // turn into percent value
+          push_to_flash((uint32_t)(value * 100));      // turn into percent value
           data_is_modified = false;
         }
         break;
