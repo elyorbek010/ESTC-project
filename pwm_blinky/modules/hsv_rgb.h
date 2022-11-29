@@ -3,11 +3,10 @@
 
 #include "math.h"
 #include "logs.h"
-#include "pwm.h"
 
 void hsv2rgb(float, float, float, uint32_t *, uint32_t *, uint32_t *);
 
-void no_modif(void);
+void no_input(void);
 
 void hue_modif(float *);
 

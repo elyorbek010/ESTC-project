@@ -52,7 +52,7 @@ void hsv2rgb(float hue, float saturation, float value, uint32_t *red, uint32_t *
   }
 }
 
-void no_modif(void)
+void no_input(void)
 {
   // NRF_LOG_INFO("no modif");
 }
