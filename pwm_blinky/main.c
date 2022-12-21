@@ -3,16 +3,15 @@
 #include "modules/hsv_rgb.h"
 #include "modules/pwm.h"
 #include "modules/nvmc.h"
+#include "modules/my_cli.h"
 
 #define DEVICE_ID 7201
 #define SLEEP_TIME 30
 
-bool data_is_modified;
-
 APP_TIMER_DEF(wake_up_timer);
 void timeout_wake_up_handler(void *p_context);
 
-static const uint8_t MODES_N = 4;
+static const uint32_t MODES_N = 4;
 typedef enum
 {
   NO_INPUT,
@@ -24,50 +23,30 @@ typedef enum
 int main(void)
 {
   logs_init();
-  bsp_board_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS);
   timer_init();
   gpiote_init();
   pwm_init();
+  cli_init();
 
   app_timer_create(&wake_up_timer, APP_TIMER_MODE_REPEATED, timeout_wake_up_handler);
   app_timer_start(wake_up_timer, APP_TIMER_TICKS(SLEEP_TIME), NULL);
 
-  float value;
-  float saturation;
-  float hue;
-
-  if (nvmc_init())
-  {
-    value = ((float)pop_from_flash()) / 100;      // turn percent into float value < 1.0
-    saturation = ((float)pop_from_flash()) / 100; // turn percent into float value < 1.0
-    hue = (float)pop_from_flash();
-
-    push_to_flash((uint32_t)(hue));
-    push_to_flash((uint32_t)(saturation * 100)); // turn into percent value
-    push_to_flash((uint32_t)(value * 100));      // turn into percent value
-  }
-  else
-  {
-    hue = 4;        // 360 * 0.01 = 3.6 ~ 4
-    saturation = 1; // 100%
-    value = 1;      // 100%
-  }
-
-  uint32_t red;
-  uint32_t green;
-  uint32_t blue;
-
   my_modes_t mode = NO_INPUT;
+  Color color = {0, 0, 0, 3.6, 1, 1, 0, 0};
 
-  hsv2rgb(hue, saturation, value, &red, &green, &blue);
-  pwm_indicator_update(mode);
-  pwm_rgb_update(red, green, blue);
+  nvmc_init(&color);
 
   while (true)
   {
-    send_log(); // Periodically send logs
+    send_log();
+    // NRF_LOG_INFO("%u, %u", cur_list_addr, n_elem);
+    // NRF_LOG_INFO("%s", colors_list[0].name);
 
-    if (is_double_clicked()) // change mode when button double clicked
+    // char *buffer = (char*)cur_list_addr;
+    // NRF_LOG_PUSH(buffer);
+    // NRF_LOG_INFO("size of buffer = %d", sizeof(buffer));
+    // change mode when button is double clicked
+    if (is_double_clicked())
     {
       mode++;
       if (mode >= MODES_N)
@@ -77,40 +56,48 @@ int main(void)
       pwm_indicator_update(mode);
     }
 
-    while (is_pressed()) // change hsv values when holding button pressed
+    // increment hsv value if holding button pressed
+    if (is_pressed())
     {
       switch (mode)
       {
       case NO_INPUT:
         // no_input();
-        if (data_is_modified)
-        {
-          NRF_LOG_INFO("writing to flash");
-          push_to_flash((uint32_t)(hue));
-          push_to_flash((uint32_t)(saturation * 100)); // turn into percent value
-          push_to_flash((uint32_t)(value * 100));      // turn into percent value
-          data_is_modified = false;
-        }
         break;
       case HUE_MODIFY:
-        hue_modif(&hue);
-        data_is_modified = true;
+        hue_modif(&color);
         break;
       case SATURATION_MODIFY:
-        satur_modif(&saturation);
-        data_is_modified = true;
+        satur_modif(&color);
         break;
       case VALUE_MODIFY:
-        val_modif(&value);
-        data_is_modified = true;
+        val_modif(&color);
         break;
       default:
         break;
       }
-      hsv2rgb(hue, saturation, value, &red, &green, &blue);
-      pwm_rgb_update(red, green, blue);
     }
-    __WFI();
+
+    // process cli commands
+    cli_process(&color);
+
+    if (color.modified)
+    {
+      pwm_rgb_update(color.red, color.green, color.blue);
+      NRF_LOG_INFO("hue: %u, saturation: %u, value: %u\nred: %u, green: %u, blue: %u\n",
+                   (uint32_t)color.hue, (uint32_t)(color.saturation * 100), (uint32_t)(color.value * 100),
+                   color.red, color.green, color.blue);
+    }
+
+    if (!is_pressed())
+    {
+      if (color.modified)
+      {
+        NRF_LOG_INFO("SAVED");
+        write_color(&color);
+      }
+      __WFI();
+    }
   }
 }
 

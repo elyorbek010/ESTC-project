@@ -11,7 +11,6 @@ void logs_init(void)
 }
 
 void send_log(void){
-    //NRF_LOG_INFO("log No: %lu", iter_cnt);
     LOG_BACKEND_USB_PROCESS();
     NRF_LOG_PROCESS();
 }

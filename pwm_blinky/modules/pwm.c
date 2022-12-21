@@ -48,12 +48,11 @@ nrf_pwm_sequence_t const seq_on = {
 
 void pwm_rgb_update(uint32_t red, uint32_t green, uint32_t blue)
 {
-    // NRF_LOG_INFO("LED2_R = %u  LED2_G = %u  , LED2_B = %u", red, green, blue);
+    //NRF_LOG_INFO("UPDATE:\nLED2_R = %u  LED2_G = %u  , LED2_B = %u", red, green, blue);
     float scale_factor = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE / (1.0 * 255);
     rgb_seq_vals->channel_0 = (uint32_t)(red * scale_factor);
     rgb_seq_vals->channel_1 = (uint32_t)(green * scale_factor);
     rgb_seq_vals->channel_2 = (uint32_t)(blue * scale_factor);
-    nrfx_pwm_simple_playback(&pwm_rgb, &seq_rgb, 1, NRF_DRV_PWM_FLAG_LOOP);
 }
 
 void pwm_indicator_update(my_pwm_modes_t mode)
@@ -92,19 +91,20 @@ void pwm_init(void)
     };
 
     APP_ERROR_CHECK(nrfx_pwm_init(&pwm_rgb, &config_rgb, NULL));
+    nrfx_pwm_simple_playback(&pwm_rgb, &seq_rgb, 1, NRF_DRV_PWM_FLAG_LOOP);
 
     // PWM indicator
     indicator_seq_slow_vals[STEPS_SLOW] = TOP_VALUE;
     for (uint32_t i = 1; i < STEPS_SLOW; i++)
     {
-        indicator_seq_slow_vals[i] = indicator_seq_slow_vals[i-1] + step_slow;
+        indicator_seq_slow_vals[i] = indicator_seq_slow_vals[i - 1] + step_slow;
         indicator_seq_slow_vals[STEPS_SLOW + i] = TOP_VALUE - indicator_seq_slow_vals[i];
     }
 
     indicator_seq_fast_vals[STEPS_FAST] = TOP_VALUE;
     for (uint32_t i = 1; i < STEPS_FAST; i++)
     {
-        indicator_seq_fast_vals[i] = indicator_seq_fast_vals[i-1] + step_fast;
+        indicator_seq_fast_vals[i] = indicator_seq_fast_vals[i - 1] + step_fast;
         indicator_seq_fast_vals[STEPS_FAST + i] = TOP_VALUE - indicator_seq_fast_vals[i];
     }
 
@@ -124,4 +124,5 @@ void pwm_init(void)
     };
 
     APP_ERROR_CHECK(nrfx_pwm_init(&pwm_indicator, &config_indicator, NULL));
+    nrfx_pwm_simple_playback(&pwm_indicator, &seq_off, 1, NRF_DRV_PWM_FLAG_LOOP);
 }

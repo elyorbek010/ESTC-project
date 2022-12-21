@@ -1,97 +1,209 @@
 #include "hsv_rgb.h"
 
-static const float HUE_CHANGE_STEP = 0.01;
-static const float SATURATION_CHANGE_STEP = 0.00002;
-static const float VALUE_CHANGE_STEP = 0.00002;
-
-static bool hue_dir;   // 1 - up, 0 - down
-static bool satur_dir; // 1 - up, 0 - down
-static bool val_dir;   // 1 - up, 0 - down
-
-void hsv2rgb(float hue, float saturation, float value, uint32_t *red, uint32_t *green, uint32_t *blue)
+typedef enum
 {
-  float c = saturation * value;
-  float x = c * (1 - fabs(hue / 60 - ((int)((hue / 60) / 2)) * 2 - 1));
-  float m = value - c;
+  DOWN,
+  UP
+} my_dir_t;
 
-  if (hue >= 0 && hue < 60)
-  {
-    *red = (c + m) * 255;
-    *green = (x + m) * 255;
-    *blue = m * 255;
-  }
-  else if (hue >= 60 && hue < 120)
-  {
-    *red = (x + m) * 255;
-    *green = (c + m) * 255;
-    *blue = m * 255;
-  }
-  else if (hue >= 120 && hue < 180)
-  {
-    *red = m * 255;
-    *green = (c + m) * 255;
-    *blue = (x + m) * 255;
-  }
-  else if (hue >= 180 && hue < 240)
-  {
-    *red = m * 255;
-    *green = (x + m) * 255;
-    *blue = (c + m) * 255;
-  }
-  else if (hue >= 240 && hue < 300)
-  {
-    *red = (x + m) * 255;
-    *green = m * 255;
-    *blue = (c + m) * 255;
-  }
-  else if (hue >= 300 && hue < 360)
-  {
-    *red = (c + m) * 255;
-    *green = m * 255;
-    *blue = (x + m) * 255;
-  }
-}
+static my_dir_t hue_dir;
+static my_dir_t satur_dir;
+static my_dir_t val_dir;
 
 void no_input(void)
 {
-  // NRF_LOG_INFO("no modif");
 }
 
-void hue_modif(float * hue)
+void hue_modif(Color *color)
 {
-  *hue = hue_dir ? (*hue + HUE_CHANGE_STEP) : (*hue - HUE_CHANGE_STEP);
-  if(*hue >= 360){
-    hue_dir = 0;
-    *hue = 360;
-  } else if(*hue <= 0){
-    hue_dir = 1;
-    *hue = 0;
+  color->hue = hue_dir ? (color->hue + HUE_CHANGE_STEP) : (color->hue - HUE_CHANGE_STEP);
+  if (color->hue > 360.0)
+  {
+    hue_dir = DOWN;
+    color->hue = 360.0;
   }
-  // NRF_LOG_INFO("hue modify: hue = %u", (uint32_t)(*hue));
+  else if (color->hue < 0)
+  {
+    hue_dir = UP;
+    color->hue = 0;
+  }
+  hsv2rgb(color);
+  color->modified = true;
+  // NRF_LOG_INFO("hue_modif: %u", (uint32_t)color->hue);
 }
 
-void satur_modif(float * saturation)
+void satur_modif(Color *color)
 {
-  *saturation = satur_dir ? (*saturation + SATURATION_CHANGE_STEP) : (*saturation - SATURATION_CHANGE_STEP);
-  if(*saturation >= 1){
-    satur_dir = 0;
-    *saturation = 1;
-  } else if(*saturation <= 0){
-    satur_dir = 1;
-    *saturation = 0;
+  color->saturation = satur_dir ? (color->saturation + SATURATION_CHANGE_STEP) : (color->saturation - SATURATION_CHANGE_STEP);
+  if (color->saturation > 1.0)
+  {
+    satur_dir = DOWN;
+    color->saturation = 1.0;
   }
-  // NRF_LOG_INFO("saturation modify: saturation = %u%%", (uint32_t)((*saturation) * 100));
+  else if (color->saturation < 0)
+  {
+    satur_dir = UP;
+    color->saturation = 0;
+  }
+  hsv2rgb(color);
+  color->modified = true;
+  // NRF_LOG_INFO("satur_modif: %u", (uint32_t)(color->saturation * 100));
 }
 
-void val_modif(float * value)
+void val_modif(Color *color)
 {
-  *value = val_dir ? (*value + VALUE_CHANGE_STEP) : (*value - VALUE_CHANGE_STEP);
-  if(*value >= 1){
-    val_dir = 0;
-    *value = 1;
-  } else if(*value <= 0){
-    val_dir = 1;
-    *value = 0;
+  color->value = val_dir ? (color->value + VALUE_CHANGE_STEP) : (color->value - VALUE_CHANGE_STEP);
+  if (color->value > 1.0)
+  {
+    val_dir = DOWN;
+    color->value = 1.0;
   }
-  // NRF_LOG_INFO("value modify: value = %u%%", (uint32_t)((*value) * 100));
+  else if (color->value < 0)
+  {
+    val_dir = UP;
+    color->value = 0;
+  }
+  hsv2rgb(color);
+  color->modified = true;
+  // NRF_LOG_INFO("val_modif: %u", (uint32_t)(color->value * 100));
+}
+
+void hsv2rgb(Color *color)
+{
+  float r = 0, g = 0, b = 0;
+  float h = color->hue;
+  float s = color->saturation;
+  float v = color->value;
+
+  if (s == 0)
+  {
+    r = v;
+    g = v;
+    b = v;
+  }
+  else
+  {
+    int i;
+    float f, p, q, t;
+
+    if (h == 360)
+    {
+      h = 0;
+    }
+    else
+    {
+      h /= 60;
+    }
+
+    i = (int)trunc(h);
+    f = h - i;
+
+    p = v * (1.0 - s);
+    q = v * (1.0 - (s * f));
+    t = v * (1.0 - (s * (1.0 - f)));
+
+    switch (i)
+    {
+    case 0:
+      r = v;
+      g = t;
+      b = p;
+      break;
+
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+
+    default:
+      r = v;
+      g = p;
+      b = q;
+      break;
+    }
+  }
+
+  color->red = (uint32_t)(r * 255);
+  color->green = (uint32_t)(g * 255);
+  color->blue = (uint32_t)(b * 255);
+}
+
+static float min(float a, float b)
+{
+  return a <= b ? a : b;
+}
+
+static float max(float a, float b)
+{
+  return a >= b ? a : b;
+}
+
+void rgb2hsv(Color *color)
+{
+  float delta, min_;
+  float h, s, v;
+
+  min_ = min(min(color->red, color->green), color->blue);
+  v = max(max(color->red, color->green), color->blue);
+  delta = v - min_;
+
+  if (v == 0)
+  {
+    s = 0;
+  }
+  else
+  {
+    s = delta / v;
+  }
+
+  if (s == 0)
+  {
+    h = 0;
+  }
+  else
+  {
+    if (color->red == v)
+    {
+      h = ((float)color->green - (float)color->blue) / delta;
+    }
+    else if (color->green == v)
+    {
+      h = 2 + ((float)color->blue - (float)color->red) / delta;
+    }
+    else if (color->blue == v)
+    {
+      h = 4 + ((float)color->red - (float)color->green) / delta;
+    }
+    h *= 60;
+    if (h < 0)
+    {
+      h += 360;
+    }
+  }
+
+  color->hue = h;
+  color->saturation = s;
+  color->value = v / 255;
+  NRF_LOG_INFO("RGB TO HSV:\nhue: %u, saturation: %u, value: %u\nred: %u, green: %u, blue: %u\n",
+               (uint32_t)color->hue, (uint32_t)(color->saturation * 100), (uint32_t)(color->value * 100),
+               color->red, color->green, color->blue);
 }
