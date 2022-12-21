@@ -224,8 +224,9 @@ void list_colors_command()
         a = snprintf(buffer, 4, "%lu", colors_list[i].green);
         app_usbd_cdc_acm_write(&usb_cdc_acm, buffer, a);
         app_usbd_cdc_acm_write(&usb_cdc_acm, " ", 1);
-        a = snprintf(buffer, 4, "%lu\r\n", colors_list[i].blue);
+        a = snprintf(buffer, 4, "%lu", colors_list[i].blue);
         app_usbd_cdc_acm_write(&usb_cdc_acm, buffer, a);
+        app_usbd_cdc_acm_write(&usb_cdc_acm, "\r\n", 2);
     }
 }
 

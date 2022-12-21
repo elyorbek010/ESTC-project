@@ -2,7 +2,7 @@
 
 page 3
 /////////////////
-/      .        /
+/n_elem         /   page_3_addr + 4 * WORD_SIZE  |  current number of colors list
 /cur_list_addr  /   page_3_addr + 3 * WORD_SIZE  |  current address of colors list
 /validity key   /   page_3_addr + 2 * WORD_SIZE  |  validity key of colors list
 /cur addr       /   page_3_addr + 1 * WORD_SIZE  |  current address of rgb values
@@ -42,6 +42,14 @@ static const uint32_t page_1_addr = BOOTLOADER_START_ADDR - NRF_DFU_APP_DATA_ARE
 static const uint32_t page_2_addr = BOOTLOADER_START_ADDR - NRF_DFU_APP_DATA_AREA_SIZE + 1 * PAGE_SIZE;
 static const uint32_t page_3_addr = BOOTLOADER_START_ADDR - NRF_DFU_APP_DATA_AREA_SIZE + 2 * PAGE_SIZE;
 
+// uint32_t get_n_elem(void){
+//     return n_elem;
+// }
+
+// uint32_t set_n_elem(uint32_t number){
+//     n_elem = number;
+// }
+
 void save_cur_addr(uint32_t cur_addr)
 {
     uint32_t validity_key = *(uint32_t *)(page_3_addr + 2 * WORD_SIZE);
@@ -52,6 +60,7 @@ void save_cur_addr(uint32_t cur_addr)
     {
         nrf_nvmc_write_word(page_3_addr + 2 * WORD_SIZE, VALIDITY_KEY);
         nrf_nvmc_write_word(page_3_addr + 3 * WORD_SIZE, cur_list_addr);
+        nrf_nvmc_write_word(page_3_addr + 4 * WORD_SIZE, n_elem);
     }
 }
 
@@ -63,6 +72,7 @@ void save_list_cur_addr(void)
     nrf_nvmc_write_word(page_3_addr + WORD_SIZE, rgb_cur_addr);
     nrf_nvmc_write_word(page_3_addr + 2 * WORD_SIZE, VALIDITY_KEY);
     nrf_nvmc_write_word(page_3_addr + 3 * WORD_SIZE, cur_list_addr);
+    nrf_nvmc_write_word(page_3_addr + 4 * WORD_SIZE, n_elem);
 }
 
 void nvmc_init(Color *color)
@@ -82,6 +92,7 @@ void nvmc_init(Color *color)
     if (*(uint32_t *)(page_3_addr + 2 * WORD_SIZE) == VALIDITY_KEY)
     {
         cur_list_addr = *((uint32_t *)(page_3_addr + 3 * WORD_SIZE)); // get current address of colors list from memory
+        n_elem = *((uint32_t *)(page_3_addr + 4 * WORD_SIZE));
         memcpy(colors_list, (uint32_t *)cur_list_addr, sizeof(colors_list));
     }
     else
@@ -138,9 +149,9 @@ void update_list()
         nrf_nvmc_write_words(cur_list_addr, (void *)colors_list, sizeof(colors_list));
         NRF_LOG_INFO("UPDATE LIST");
     }
-    char *buffer = (char*)cur_list_addr;
-    NRF_LOG_INFO("size of buffer = %d", sizeof(buffer));
-    NRF_LOG_PUSH(buffer);
+    // char *buffer = (char*)cur_list_addr;
+    // NRF_LOG_INFO("size of buffer = %d", sizeof(buffer));
+    // NRF_LOG_INFO("%s", NRF_LOG_PUSH(buffer));
     save_list_cur_addr();
 }
 

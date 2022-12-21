@@ -39,12 +39,7 @@ int main(void)
   while (true)
   {
     send_log();
-    // NRF_LOG_INFO("%u, %u", cur_list_addr, n_elem);
-    // NRF_LOG_INFO("%s", colors_list[0].name);
-
-    // char *buffer = (char*)cur_list_addr;
-    // NRF_LOG_PUSH(buffer);
-    // NRF_LOG_INFO("size of buffer = %d", sizeof(buffer));
+    
     // change mode when button is double clicked
     if (is_double_clicked())
     {
