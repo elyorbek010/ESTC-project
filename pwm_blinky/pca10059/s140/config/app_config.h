@@ -99,6 +99,14 @@
 #define LOG_BACKEND_USB_UTILIZE_POWER_EVENTS 1
 #endif
 
-// </e>
+// <e> NRFX_NVMC_ENABLED - nrfx_nvmc - NVMC peripheral driver
+//==========================================================
+#ifndef NRFX_NVMC_ENABLED
+#define NRFX_NVMC_ENABLED 1
+#endif // NRFX_NVMC_ENABLED
+
+#ifndef ESTC_MAX_LINE_SIZE
+#define ESTC_MAX_LINE_SIZE 64
+#endif // ESTC_MAX_LINE_SIZE
 
 #endif // APP_CONFIG_H

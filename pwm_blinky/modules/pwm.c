@@ -1,5 +1,11 @@
 #include "pwm.h"
 
+#include "nrf_drv_pwm.h"
+#include "nrfx_pwm.h"
+#include "nrf_pwm.h"
+#include "boards.h"
+#include "nrf_log.h"
+
 static nrf_drv_pwm_t pwm_indicator = NRF_DRV_PWM_INSTANCE(0);
 static nrf_drv_pwm_t pwm_rgb = NRF_DRV_PWM_INSTANCE(1);
 
@@ -48,14 +54,14 @@ nrf_pwm_sequence_t const seq_on = {
 
 void pwm_rgb_update(uint32_t red, uint32_t green, uint32_t blue)
 {
-    //NRF_LOG_INFO("UPDATE:\nLED2_R = %u  LED2_G = %u  , LED2_B = %u", red, green, blue);
+    // NRF_LOG_INFO("UPDATE_PWM:\nLED_R = %u  LED_G = %u  , LED_B = %u", red, green, blue);
     float scale_factor = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE / (1.0 * 255);
     rgb_seq_vals->channel_0 = (uint32_t)(red * scale_factor);
     rgb_seq_vals->channel_1 = (uint32_t)(green * scale_factor);
     rgb_seq_vals->channel_2 = (uint32_t)(blue * scale_factor);
 }
 
-void pwm_indicator_update(my_pwm_modes_t mode)
+void pwm_indicator_update(pwm_indicator_modes_t mode)
 {
     switch (mode)
     {

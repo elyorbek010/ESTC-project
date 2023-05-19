@@ -2,101 +2,88 @@
 #include "modules/button.h"
 #include "modules/hsv_rgb.h"
 #include "modules/pwm.h"
-#include "modules/nvmc.h"
+#if (ESTC_USB_CLI_ENABLED == 1)
 #include "modules/my_cli.h"
+#endif
+#include "modules/fstorage.h"
+#include "modules/my_ble.h"
 
-#define DEVICE_ID 7201
-#define SLEEP_TIME 30
+#include "app_timer.h"
+#include "nrf_log.h"
+#include "app_usbd.h"
+
+#define SLEEP_TIME_MS 500
 
 APP_TIMER_DEF(wake_up_timer);
 void timeout_wake_up_handler(void *p_context);
 
-static const uint32_t MODES_N = 4;
-typedef enum
-{
-  NO_INPUT,
-  HUE_MODIFY,
-  SATURATION_MODIFY,
-  VALUE_MODIFY
-} my_modes_t;
+void timer_init(void);
 
 int main(void)
 {
+  color_init();
   logs_init();
   timer_init();
-  gpiote_init();
   pwm_init();
+  button_init();
+#if (ESTC_USB_CLI_ENABLED == 1)
   cli_init();
-
-  app_timer_create(&wake_up_timer, APP_TIMER_MODE_REPEATED, timeout_wake_up_handler);
-  app_timer_start(wake_up_timer, APP_TIMER_TICKS(SLEEP_TIME), NULL);
-
-  my_modes_t mode = NO_INPUT;
-  Color color = {0, 0, 0, 3.6, 1, 1, 0, 0};
-
-  nvmc_init(&color);
+#endif
+  fstorage_init();
+  my_ble_init();
 
   while (true)
   {
-    send_log();
-    
-    // change mode when button is double clicked
-    if (is_double_clicked())
-    {
-      mode++;
-      if (mode >= MODES_N)
-      {
-        mode = NO_INPUT;
-      }
-      pwm_indicator_update(mode);
-    }
+// process cli
+#if (ESTC_USB_CLI_ENABLED == 1)
+    app_usbd_event_queue_process();
+    cli_process();
+#endif
 
-    // increment hsv value if holding button pressed
-    if (is_pressed())
-    {
-      switch (mode)
-      {
-      case NO_INPUT:
-        // no_input();
-        break;
-      case HUE_MODIFY:
-        hue_modif(&color);
-        break;
-      case SATURATION_MODIFY:
-        satur_modif(&color);
-        break;
-      case VALUE_MODIFY:
-        val_modif(&color);
-        break;
-      default:
-        break;
-      }
-    }
+    // flush all buffered logs
+    send_logs();
 
-    // process cli commands
-    cli_process(&color);
-
-    if (color.modified)
-    {
-      pwm_rgb_update(color.red, color.green, color.blue);
-      NRF_LOG_INFO("hue: %u, saturation: %u, value: %u\nred: %u, green: %u, blue: %u\n",
-                   (uint32_t)color.hue, (uint32_t)(color.saturation * 100), (uint32_t)(color.value * 100),
-                   color.red, color.green, color.blue);
-    }
-
-    if (!is_pressed())
-    {
-      if (color.modified)
-      {
-        NRF_LOG_INFO("SAVED");
-        write_color(&color);
-      }
-      __WFI();
-    }
+    //__WFI();
   }
+}
+
+void timer_init(void)
+{
+  ret_code_t ret;
+  ret = app_timer_init();
+  APP_ERROR_CHECK(ret);
+
+  ret = app_timer_create(&wake_up_timer, APP_TIMER_MODE_REPEATED, timeout_wake_up_handler);
+  APP_ERROR_CHECK(ret);
+
+  ret = app_timer_start(wake_up_timer, APP_TIMER_TICKS(SLEEP_TIME_MS), NULL);
+  APP_ERROR_CHECK(ret);
 }
 
 void timeout_wake_up_handler(void *p_context)
 {
-  // NRF_LOG_INFO("wake up");
+  if (is_mode_changed())
+  {
+    pwm_indicator_update((pwm_indicator_modes_t)get_board_mode());
+  }
+
+  if (!is_color_saved())
+  {
+    uint32_t red = 0, green = 0, blue = 0;
+    get_rgb(&red, &green, &blue);
+
+    pwm_rgb_update(red, green, blue);
+    ble_rgb_update();
+
+    save_color();
+
+    float h, s, v;
+    get_hsv(&h, &s, &v);
+
+    NRF_LOG_INFO("hue: %u\u00B0, saturation: %u%%, value: %u%%",
+                 (uint32_t)h, (uint32_t)s, (uint32_t)v);
+
+    NRF_LOG_INFO("red: %u, green: %u, blue: %u\n",
+                 red, green, blue);
+  }
 }

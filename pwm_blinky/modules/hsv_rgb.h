@@ -1,44 +1,42 @@
 #ifndef HSV_RGB_H
 #define HSV_RGB_H
 
-#include "math.h"
-#include "logs.h"
+#include "stdbool.h"
+#include "stdint.h"
 
-static const float HUE_CHANGE_STEP = 0.02;
-static const float SATURATION_CHANGE_STEP = 0.00005;
-static const float VALUE_CHANGE_STEP = 0.00005;
+#define HUE_CHANGE_STEP 8
+#define SATURATION_CHANGE_STEP 4
+#define VALUE_CHANGE_STEP 4
 
-typedef struct
+typedef enum
 {
-    uint32_t red;   // 0 to 255
-    uint32_t green; // 0 to 255
-    uint32_t blue;  // 0 to 255
+    RED,
+    GREEN,
+    BLUE
+} rgb_t;
 
-    float hue;        // 0 to 360
-    float saturation; // 0 to 1
-    float value;      // 0 to 1
+typedef enum
+{
+    HUE,
+    SATURATION,
+    VALUE
+} hsv_t;
 
-    bool modified; // 0 - saved, 1 - modified
+void color_init(void);
 
-    uint32_t cur_addr;  // current address of rgb values saved in flash memory
-} Color;
+void set_rgb(uint32_t red, uint32_t green, uint32_t blue);
 
-// Update RGB values given HSV values
-void hsv2rgb(Color *);
+void get_rgb(uint32_t *red, uint32_t *green, uint32_t *blue); // MAX_RGB_VALUE = 255
 
-// Update HSV values given RGB values
-void rgb2hsv(Color *);
+void set_hsv(float hue, float saturation, float value);
 
-// Do nothing
-void no_input(void);
+void get_hsv(float *hue, float *saturation, float *value); // Max HUE = 360°, Max SATURATION 100%, Max VALUE 100%
 
-// Fluctuate hue 0-360-0 with steps of HUE_CHANGE_STEP
-void hue_modif(Color *);
+// slide hsv values specified by option from 0% to 100% back and forth
+void slide_hsv(hsv_t option);
 
-// Fluctuate saturation 0-1-0 with steps of SATURATION_CHANGE_STEP
-void satur_modif(Color *);
+bool is_color_saved(void);
 
-// Fluctuate value 0-1-0 with steps of VALUE_CHANGE_STEP
-void val_modif(Color *);
+void set_color_saved(void);
 
 #endif // HSV_RGB_H

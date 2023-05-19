@@ -1,20 +1,46 @@
 #include "my_cli.h"
+#include "hsv_rgb.h"
+#include "fstorage.h"
+
+#include "app_usbd_cdc_acm.h"
+#include "nrf_log.h"
+#include "stdbool.h"
+#include "stdint.h"
+#include "stdlib.h"
+
+#define MAX_ARGS 10
+#define MAX_TOKEN_LENGTH 20
+
+#define N_COMMANDS 8
+
+typedef enum
+{
+    HELP,
+    RGB,
+    HSV,
+    ADD_RGB_COLOR,
+    ADD_CURRENT_COLOR,
+    DEL_COLOR,
+    APPLY_COLOR,
+    LIST_COLORS
+} my_command_t;
+
+static const char commands[N_COMMANDS][MAX_TOKEN_LENGTH] =
+    {"help", "RGB", "HSV", "add_rgb_color", "add_current_color", "del_color", "apply_color", "list_colors"};
 
 #define READ_SIZE 1
-//
+
 static uint32_t count_rows;
 static uint32_t count_cols;
 static char prev_char = ' ';
 static bool received_command;
-//
+
 static char m_rx_buffer[READ_SIZE];
-static char m_cli_buffer[10][20];
-//
+static char m_cli_buffer[MAX_ARGS][MAX_TOKEN_LENGTH]; // 10 args including command name, max of 20 chars length
 
 static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
                            app_usbd_cdc_acm_user_event_t event);
 
-/* Make sure that they don't intersect with LOG_BACKEND_USB_CDC_ACM */
 #define CDC_ACM_COMM_INTERFACE 2
 #define CDC_ACM_COMM_EPIN NRF_DRV_USBD_EPIN3
 
@@ -49,7 +75,6 @@ static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
     }
     case APP_USBD_CDC_ACM_USER_EVT_TX_DONE:
     {
-        // NRF_LOG_INFO("tx done");
         break;
     }
     case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
@@ -60,12 +85,7 @@ static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
             /*Get amount of data transfered*/
             size_t size = app_usbd_cdc_acm_rx_size(&usb_cdc_acm);
             UNUSED_VARIABLE(size);
-            // NRF_LOG_INFO("rx size: %d", size);
 
-            /* It's the simple version of an echo. Note that writing doesn't
-             * block execution, and if we have a lot of characters to read and
-             * write, some characters can be missed.
-             */
             if (m_rx_buffer[0] == '\r' || m_rx_buffer[0] == '\n')
             {
                 received_command = true;
@@ -84,13 +104,37 @@ static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
                     {
                         m_cli_buffer[count_rows++][count_cols] = '\0';
                         count_cols = 0;
+                        prev_char = ' ';
                     }
-                    prev_char = ' ';
                 }
                 else
                 {
-                    m_cli_buffer[count_rows][count_cols++] = m_rx_buffer[0];
-                    prev_char = m_rx_buffer[0];
+                    // ASCII(127) - code for delete/backspace '<-'
+                    if (m_rx_buffer[0] != 127)
+                    {
+                        m_cli_buffer[count_rows][count_cols++] = m_rx_buffer[0];
+                        prev_char = m_rx_buffer[0];
+                    }
+                    else
+                    {
+                        if (count_cols > 0)
+                        {
+                            count_cols--;
+                            if (count_cols == 0)
+                                prev_char = ' ';
+                            else
+                                prev_char = 127; // del/backspace
+                        }
+                        else
+                        {
+                            if (count_rows > 0)
+                            {
+                                count_rows--;
+                                count_cols = strlen(m_cli_buffer[count_rows]);
+                                prev_char = 127; // del/backspace
+                            }
+                        }
+                    }
                 }
 
                 ret = app_usbd_cdc_acm_write(&usb_cdc_acm,
@@ -109,26 +153,35 @@ static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
     }
 }
 
-void unknown_command(void)
+static void unknown_command(void)
 {
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "Unknown command!\r\n", 19);
+    app_usbd_cdc_acm_write(&usb_cdc_acm, "Unknown command!\r\nPrint 'help' to get information about available commands\r\n", 79);
 }
 
-void help_command(void)
+static void help_command(void)
 {
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "RGB <red> <green> <blue> - the device sets current color to specified one.\r\n", 77);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "HSV <hur> <saturation> <value> - the same with RGB, but color is specified in HSV.\r\n", 85);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "add_rgb_color <r> <g> <b> <color_name>\r\n", 41);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "add_current_color <color_name>\r\n", 33);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "del_color <color_name>\r\n", 25);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "apply_color <color_name>\r\n", 27);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "list_colors\r\n", 14);
-    app_usbd_cdc_acm_write(&usb_cdc_acm, "help - print information about supported commands.\r\n", 53);
+    app_usbd_cdc_acm_write(&usb_cdc_acm, "RGB <red> <green> <blue> - the device sets current color to specified one.\r\n"
+                                         "HSV <hur> <saturation> <value> - the same with RGB, but color is specified in HSV.\r\n"
+                                         "add_rgb_color <r> <g> <b> <color_name>\r\n"
+                                         "add_current_color <color_name>\r\n"
+                                         "del_color <color_name>\r\n"
+                                         "apply_color <color_name>\r\n"
+                                         "list_colors\r\n"
+                                         "help - print information about supported commands.\r\n",
+                           348);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "RGB <red> <green> <blue> - the device sets current color to specified one.\r\n", 77);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "HSV <hur> <saturation> <value> - the same with RGB, but color is specified in HSV.\r\n", 85);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "add_rgb_color <r> <g> <b> <color_name>\r\n", 41);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "add_current_color <color_name>\r\n", 33);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "del_color <color_name>\r\n", 25);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "apply_color <color_name>\r\n", 27);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "list_colors\r\n", 14);
+    // app_usbd_cdc_acm_write(&usb_cdc_acm, "help - print information about supported commands.\r\n", 53);
 }
 
 my_command_t determine_command(void)
 {
-    for (uint32_t i = 0; i < M_COMMANDS; i++)
+    for (uint32_t i = 0; i < N_COMMANDS; i++)
     {
         if (strcmp(m_cli_buffer[0], commands[i]) == 0)
         {
@@ -138,7 +191,7 @@ my_command_t determine_command(void)
     return -1;
 }
 
-void hsv_command(const char argv[10][20], uint32_t argc, Color *color)
+static void hsv_command(const char argv[MAX_ARGS][MAX_TOKEN_LENGTH], uint32_t argc)
 {
     if (argc != 4)
     {
@@ -146,26 +199,20 @@ void hsv_command(const char argv[10][20], uint32_t argc, Color *color)
         return;
     }
 
-    uint32_t hue_ = atoi(argv[1]);
-    uint32_t saturation_ = atoi(argv[2]);
-    uint32_t value_ = atoi(argv[3]);
+    uint32_t hue = atoi(argv[1]);
+    uint32_t saturation = atoi(argv[2]);
+    uint32_t value = atoi(argv[3]);
 
-    if (hue_ > 360 || saturation_ > 100 || value_ > 100)
+    if (hue > 360 || saturation > 100 || value > 100)
     {
         unknown_command();
         return;
     }
 
-    color->modified = true;
-    color->hue = hue_;
-    color->saturation = saturation_ / 100.f;
-    color->value = value_ / 100.f;
-    hsv2rgb(color);
-
-    NRF_LOG_INFO("hue = %u, saturation = %u, value = %u", hue_, saturation_, value_);
+    set_hsv(hue, saturation, value);
 }
 
-void rgb_command(const char argv[10][20], uint32_t argc, Color *color)
+static void rgb_command(const char argv[MAX_ARGS][MAX_TOKEN_LENGTH], uint32_t argc)
 {
     if (argc != 4)
     {
@@ -173,29 +220,22 @@ void rgb_command(const char argv[10][20], uint32_t argc, Color *color)
         return;
     }
 
-    uint32_t red_ = atoi(argv[1]);
-    uint32_t green_ = atoi(argv[2]);
-    uint32_t blue_ = atoi(argv[3]);
+    uint32_t red = atoi(argv[1]);
+    uint32_t green = atoi(argv[2]);
+    uint32_t blue = atoi(argv[3]);
 
-    if (red_ > 255 || green_ > 255 || blue_ > 255)
+    if (red > 255 || green > 255 || blue > 255)
     {
         unknown_command();
         return;
     }
 
-    color->modified = true;
-    color->red = red_;
-
-    color->green = green_;
-    color->blue = blue_;
-    rgb2hsv(color);
-
-    NRF_LOG_INFO("red = %u, green = %u, blue = %u", red_, green_, blue_);
+    set_rgb(red, green, blue);
 }
 
-uint32_t determine_color(char str[8])
+uint32_t determine_color(char str[COLOR_NAME_LENGTH])
 {
-    for (uint32_t i = 0; i < n_elem; i++)
+    for (uint32_t i = 0; i < n_list_elem; i++)
     {
         if (strcmp(str, colors_list[i].name) == 0)
         {
@@ -208,13 +248,14 @@ uint32_t determine_color(char str[8])
 
 void list_colors_command()
 {
-    if (n_elem < 1)
+    if (n_list_elem == 0)
     {
         app_usbd_cdc_acm_write(&usb_cdc_acm, "no colors in list\r\n", 20);
         return;
     }
-    for (uint32_t i = 0; i < n_elem; i++)
+    for (uint32_t i = 0; i < n_list_elem; i++)
     {
+        // list all colors in format "name  red  green  blue"
         app_usbd_cdc_acm_write(&usb_cdc_acm, colors_list[i].name, strlen(colors_list[i].name));
         app_usbd_cdc_acm_write(&usb_cdc_acm, " ", 1);
         char buffer[4] = {'\0'};
@@ -242,14 +283,18 @@ void add_rgb_color_command(char argv[10][20], uint32_t argc)
     list_colors_command();
 }
 
-void add_current_color_command(char argv[10][20], uint32_t argc, Color *color)
+void add_current_color_command(char argv[10][20], uint32_t argc)
 {
     if (argc != 2)
     {
         unknown_command();
         return;
     }
-    save_rgb_color(color->red, color->green, color->blue, argv[1]);
+
+    uint32_t red = 0, green = 0, blue = 0;
+    get_rgb(&red, &green, &blue);
+
+    save_rgb_color(red, green, blue, argv[1]);
     list_colors_command();
 }
 
@@ -260,45 +305,42 @@ void del_color_command(char argv[10][20], uint32_t argc)
         unknown_command();
         return;
     }
+
     uint32_t i = determine_color(argv[1]);
-    if (i == (uint32_t)-1)
+
+    if (i == -1)
     {
         unknown_command();
         return;
     }
-    colors_list[i] = colors_list[n_elem - 1];
-    n_elem--;
+
+    colors_list[i] = colors_list[n_list_elem - 1];
+    n_list_elem--;
     update_list();
     list_colors_command();
 }
 
-void apply_color_command(char argv[10][20], uint32_t argc, Color *color)
+void apply_color_command(char argv[10][20], uint32_t argc)
 {
     if (argc != 2)
     {
         unknown_command();
         return;
     }
+
     uint32_t i = determine_color(argv[1]);
-    NRF_LOG_INFO("%s", argv[1]);
-    if (i == (uint32_t)-1)
+
+    if (i == -1)
     {
         unknown_command();
         return;
     }
-    color->modified = true;
-    color->red = colors_list[i].red;
-    color->green = colors_list[i].green;
-    color->blue = colors_list[i].blue;
-    rgb2hsv(color);
+
+    set_rgb(colors_list[i].red, colors_list[i].green, colors_list[i].blue);
 }
 
-void cli_process(Color *color)
+void cli_process(void)
 {
-    while (app_usbd_event_queue_process())
-    {
-    }
-
     if (received_command)
     {
         NRF_LOG_INFO("count_rows = %u", count_rows);
@@ -311,17 +353,17 @@ void cli_process(Color *color)
 
         switch (determine_command())
         {
-        case help:
+        case HELP:
             NRF_LOG_INFO("help");
             help_command();
             break;
         case RGB:
             NRF_LOG_INFO("rgb");
-            rgb_command(m_cli_buffer, count_rows, color);
+            rgb_command(m_cli_buffer, count_rows);
             break;
         case HSV:
             NRF_LOG_INFO("hsv");
-            hsv_command(m_cli_buffer, count_rows, color);
+            hsv_command(m_cli_buffer, count_rows);
             break;
         case ADD_RGB_COLOR:
             NRF_LOG_INFO("add rgb color");
@@ -329,7 +371,7 @@ void cli_process(Color *color)
             break;
         case ADD_CURRENT_COLOR:
             NRF_LOG_INFO("add current color");
-            add_current_color_command(m_cli_buffer, count_rows, color);
+            add_current_color_command(m_cli_buffer, count_rows);
             break;
         case DEL_COLOR:
             NRF_LOG_INFO("del color");
@@ -337,7 +379,7 @@ void cli_process(Color *color)
             break;
         case APPLY_COLOR:
             NRF_LOG_INFO("apply color");
-            apply_color_command(m_cli_buffer, count_rows, color);
+            apply_color_command(m_cli_buffer, count_rows);
             break;
         case LIST_COLORS:
             NRF_LOG_INFO("list colors");

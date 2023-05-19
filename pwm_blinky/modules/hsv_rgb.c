@@ -1,85 +1,40 @@
 #include "hsv_rgb.h"
 
+#include "math.h"
+#include "nrf_log.h"
+
+#define MAX_RGB_VALUE 255 // red, green, blue each have values up to 255
+#define MIN_VALUE 0
+
 typedef enum
 {
   DOWN,
   UP
 } my_dir_t;
 
-static my_dir_t hue_dir;
-static my_dir_t satur_dir;
-static my_dir_t val_dir;
+static float slide_speed[3] = {HUE_CHANGE_STEP, SATURATION_CHANGE_STEP, VALUE_CHANGE_STEP};
+static float max_hsv_value[3] = {360, 100, 100}; // Max HUE = 360°, Max SATURATION 100%, Max VALUE 100%
 
-void no_input(void)
+struct Color
 {
-}
+  uint8_t rgb[3];
+  float hsv[3];
+  my_dir_t dir[3];
 
-void hue_modif(Color *color)
-{
-  color->hue = hue_dir ? (color->hue + HUE_CHANGE_STEP) : (color->hue - HUE_CHANGE_STEP);
-  if (color->hue > 360.0)
-  {
-    hue_dir = DOWN;
-    color->hue = 360.0;
-  }
-  else if (color->hue < 0)
-  {
-    hue_dir = UP;
-    color->hue = 0;
-  }
-  hsv2rgb(color);
-  color->modified = true;
-  // NRF_LOG_INFO("hue_modif: %u", (uint32_t)color->hue);
-}
+  bool saved; // 0 - saved, 1 - saved
+} color;
 
-void satur_modif(Color *color)
-{
-  color->saturation = satur_dir ? (color->saturation + SATURATION_CHANGE_STEP) : (color->saturation - SATURATION_CHANGE_STEP);
-  if (color->saturation > 1.0)
-  {
-    satur_dir = DOWN;
-    color->saturation = 1.0;
-  }
-  else if (color->saturation < 0)
-  {
-    satur_dir = UP;
-    color->saturation = 0;
-  }
-  hsv2rgb(color);
-  color->modified = true;
-  // NRF_LOG_INFO("satur_modif: %u", (uint32_t)(color->saturation * 100));
-}
-
-void val_modif(Color *color)
-{
-  color->value = val_dir ? (color->value + VALUE_CHANGE_STEP) : (color->value - VALUE_CHANGE_STEP);
-  if (color->value > 1.0)
-  {
-    val_dir = DOWN;
-    color->value = 1.0;
-  }
-  else if (color->value < 0)
-  {
-    val_dir = UP;
-    color->value = 0;
-  }
-  hsv2rgb(color);
-  color->modified = true;
-  // NRF_LOG_INFO("val_modif: %u", (uint32_t)(color->value * 100));
-}
-
-void hsv2rgb(Color *color)
+static void hsv2rgb(void)
 {
   float r = 0, g = 0, b = 0;
-  float h = color->hue;
-  float s = color->saturation;
-  float v = color->value;
+
+  float h = color.hsv[HUE];
+  float s = color.hsv[SATURATION] / 100;
+  float v = color.hsv[VALUE] / 100;
 
   if (s == 0)
   {
-    r = v;
-    g = v;
-    b = v;
+    r = g = b = v;
   }
   else
   {
@@ -142,28 +97,28 @@ void hsv2rgb(Color *color)
     }
   }
 
-  color->red = (uint32_t)(r * 255);
-  color->green = (uint32_t)(g * 255);
-  color->blue = (uint32_t)(b * 255);
+  color.rgb[RED] = (uint8_t)(r * MAX_RGB_VALUE);
+  color.rgb[GREEN] = (uint8_t)(g * MAX_RGB_VALUE);
+  color.rgb[BLUE] = (uint8_t)(b * MAX_RGB_VALUE);
 }
 
 static float min(float a, float b)
 {
-  return a <= b ? a : b;
+  return a < b ? a : b;
 }
 
 static float max(float a, float b)
 {
-  return a >= b ? a : b;
+  return a > b ? a : b;
 }
 
-void rgb2hsv(Color *color)
+static void rgb2hsv(void)
 {
   float delta, min_;
-  float h, s, v;
+  float h = 0, s = 0, v = 0;
 
-  min_ = min(min(color->red, color->green), color->blue);
-  v = max(max(color->red, color->green), color->blue);
+  min_ = min(min(color.rgb[RED], color.rgb[GREEN]), color.rgb[BLUE]);
+  v = max(max(color.rgb[RED], color.rgb[GREEN]), color.rgb[BLUE]);
   delta = v - min_;
 
   if (v == 0)
@@ -181,17 +136,17 @@ void rgb2hsv(Color *color)
   }
   else
   {
-    if (color->red == v)
+    if (color.rgb[RED] == v)
     {
-      h = ((float)color->green - (float)color->blue) / delta;
+      h = ((float)color.rgb[GREEN] - (float)color.rgb[BLUE]) / delta;
     }
-    else if (color->green == v)
+    else if (color.rgb[GREEN] == v)
     {
-      h = 2 + ((float)color->blue - (float)color->red) / delta;
+      h = 2 + ((float)color.rgb[BLUE] - (float)color.rgb[RED]) / delta;
     }
-    else if (color->blue == v)
+    else if (color.rgb[BLUE] == v)
     {
-      h = 4 + ((float)color->red - (float)color->green) / delta;
+      h = 4 + ((float)color.rgb[RED] - (float)color.rgb[GREEN]) / delta;
     }
     h *= 60;
     if (h < 0)
@@ -200,10 +155,106 @@ void rgb2hsv(Color *color)
     }
   }
 
-  color->hue = h;
-  color->saturation = s;
-  color->value = v / 255;
-  NRF_LOG_INFO("RGB TO HSV:\nhue: %u, saturation: %u, value: %u\nred: %u, green: %u, blue: %u\n",
-               (uint32_t)color->hue, (uint32_t)(color->saturation * 100), (uint32_t)(color->value * 100),
-               color->red, color->green, color->blue);
+  color.hsv[HUE] = h;
+  color.hsv[SATURATION] = s * 100;
+  color.hsv[VALUE] = v / 255 * 100;
+}
+
+void set_rgb(uint32_t red, uint32_t green, uint32_t blue)
+{
+  if (red > 255)
+    red = MAX_RGB_VALUE;
+  if (green > 255)
+    red = MAX_RGB_VALUE;
+  if (blue > 255)
+    red = MAX_RGB_VALUE;
+
+  color.rgb[RED] = (uint8_t)red;
+  color.rgb[GREEN] = (uint8_t)green;
+  color.rgb[BLUE] = (uint8_t)blue;
+
+  rgb2hsv();
+
+  color.saved = false;
+}
+
+void get_rgb(uint32_t *red, uint32_t *green, uint32_t *blue)
+{
+  *red = color.rgb[RED];
+  *green = color.rgb[GREEN];
+  *blue = color.rgb[BLUE];
+}
+
+void set_hsv(float hue, float saturation, float value)
+{
+  if (hue > max_hsv_value[HUE])
+    hue = max_hsv_value[HUE];
+  if (saturation > max_hsv_value[SATURATION])
+    saturation = max_hsv_value[SATURATION];
+  if (value > max_hsv_value[VALUE])
+    value = max_hsv_value[VALUE];
+
+  if (hue < MIN_VALUE)
+    hue = MIN_VALUE;
+  if (saturation < MIN_VALUE)
+    saturation = MIN_VALUE;
+  if (value < MIN_VALUE)
+    value = MIN_VALUE;
+
+  color.hsv[HUE] = hue;
+  color.hsv[SATURATION] = saturation;
+  color.hsv[VALUE] = value;
+
+  hsv2rgb();
+
+  color.saved = false;
+}
+
+void get_hsv(float *hue, float *saturation, float *value)
+{
+  *hue = color.hsv[HUE];
+  *saturation = color.hsv[SATURATION];
+  *value = color.hsv[VALUE];
+}
+
+void slide_hsv(hsv_t option)
+{
+  color.hsv[option] = (color.dir[option] == UP) ? (color.hsv[option] + slide_speed[option]) : (color.hsv[option] - slide_speed[option]);
+  if (color.hsv[option] >= max_hsv_value[option])
+  {
+    color.dir[option] = DOWN;
+    color.hsv[option] = max_hsv_value[option];
+  }
+  else if (color.hsv[option] <= MIN_VALUE)
+  {
+    color.dir[option] = UP;
+    color.hsv[option] = MIN_VALUE;
+  }
+  hsv2rgb();
+  color.saved = false;
+}
+
+bool is_color_saved(void)
+{
+  return color.saved;
+}
+
+void set_color_saved(void)
+{
+  color.saved = true;
+}
+
+void color_init(void)
+{
+  color.rgb[RED] = MAX_RGB_VALUE;
+  color.rgb[GREEN] = MAX_RGB_VALUE;
+  color.rgb[BLUE] = MAX_RGB_VALUE;
+
+  rgb2hsv();
+
+  color.dir[HUE] = UP;
+  color.dir[SATURATION] = UP;
+  color.dir[VALUE] = UP;
+
+  color.saved = false;
 }
