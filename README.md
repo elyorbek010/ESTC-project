@@ -55,6 +55,10 @@ To connect your BLE-enabled device to the board, search for and connect to the d
 
 The program includes a persistent data storage system that saves the color of the LED, keeping it the same even after a power cycle. To use this feature, simply set the LED to your preferred color, and the program will automatically save the color to the board's flash memory. The saved color will be applied the next time you power on the board.
 
+## Debug
+
+To Debug the application use either PuTTy or terminal(type cat dev/ttyACM0 or use picocom) to read logs.
+
 ## Credits
 
 This program was developed as part of the Embedded Systems Laboratory final assignment by [Elyorbek Kholikov]. The program is licensed under the [MIT licence]. Contributions are welcome!
