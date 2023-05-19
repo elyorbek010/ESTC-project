@@ -365,28 +365,6 @@ static void advertising_init(void)
     ble_advertising_conn_cfg_tag_set(&m_advertising, APP_BLE_CONN_CFG_TAG);
 }
 
-// /**@brief Function for initializing power management.
-//  */
-// static void power_management_init(void)
-// {
-//     ret_code_t err_code;
-//     err_code = nrf_pwr_mgmt_init();
-//     APP_ERROR_CHECK(err_code);
-// }
-
-// /**@brief Function for handling the idle state (main loop).
-//  *
-//  * @details If there is no pending log operation, then sleep until next the next event occurs.
-//  */
-// static void idle_state_handle(void)
-// {
-//     if (NRF_LOG_PROCESS() == false)
-//     {
-//         nrf_pwr_mgmt_run();
-//     }
-//     LOG_BACKEND_USB_PROCESS();
-// }
-
 /**@brief Function for starting advertising.
  */
 static void advertising_start(void)
@@ -400,7 +378,6 @@ static void advertising_start(void)
 void my_ble_init(void)
 {
     // Initialize.
-    // power_management_init();
     ble_stack_init();
     gap_params_init();
     gatt_init();
@@ -417,12 +394,6 @@ void my_ble_init(void)
     ble_rgb_value.len = 3 * sizeof(uint8_t);
     ble_rgb_value.offset = 0;
     ble_rgb_value.p_value = (uint8_t *)&rgb_ble;
-
-    // // Enter main loop.
-    // for (;;)
-    // {
-    //     idle_state_handle();
-    // }
 }
 
 void char_2_notification_timeout_handler(void *p_context)

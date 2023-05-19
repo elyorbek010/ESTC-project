@@ -30,10 +30,8 @@ static const char commands[N_COMMANDS][MAX_TOKEN_LENGTH] =
 
 #define READ_SIZE 1
 
-static uint32_t count_rows;
-static uint32_t count_cols;
-static char prev_char = ' ';
-static bool received_command;
+#define DELIMITER ' ' // if appeared in input, divides tokens, means you have to start next string
+#define DELETE 127    // ASCII code for delete (in Windows backspace is delete in ASCII)
 
 static char m_rx_buffer[READ_SIZE];
 static char m_cli_buffer[MAX_ARGS][MAX_TOKEN_LENGTH]; // 10 args including command name, max of 20 chars length
@@ -56,6 +54,8 @@ APP_USBD_CDC_ACM_GLOBAL_DEF(usb_cdc_acm,
                             CDC_ACM_DATA_EPIN,
                             CDC_ACM_DATA_EPOUT,
                             APP_USBD_CDC_COMM_PROTOCOL_NONE);
+
+static void parser(char input);
 
 static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
                            app_usbd_cdc_acm_user_event_t event)
@@ -80,77 +80,92 @@ static void usb_ev_handler(app_usbd_class_inst_t const *p_inst,
     case APP_USBD_CDC_ACM_USER_EVT_RX_DONE:
     {
         ret_code_t ret;
-        do
+        do // echo
         {
-            /*Get amount of data transfered*/
             size_t size = app_usbd_cdc_acm_rx_size(&usb_cdc_acm);
             UNUSED_VARIABLE(size);
 
+            parser(m_rx_buffer[0]);
+
             if (m_rx_buffer[0] == '\r' || m_rx_buffer[0] == '\n')
             {
-                received_command = true;
-                m_cli_buffer[count_rows][count_cols] = '\0';
-                if (prev_char != ' ')
-                {
-                    count_rows++;
-                }
                 ret = app_usbd_cdc_acm_write(&usb_cdc_acm, "\r\n", 2);
             }
             else
             {
-                if (m_rx_buffer[0] == ' ')
-                {
-                    if (prev_char != ' ')
-                    {
-                        m_cli_buffer[count_rows++][count_cols] = '\0';
-                        count_cols = 0;
-                        prev_char = ' ';
-                    }
-                }
-                else
-                {
-                    // ASCII(127) - code for delete/backspace '<-'
-                    if (m_rx_buffer[0] != 127)
-                    {
-                        m_cli_buffer[count_rows][count_cols++] = m_rx_buffer[0];
-                        prev_char = m_rx_buffer[0];
-                    }
-                    else
-                    {
-                        if (count_cols > 0)
-                        {
-                            count_cols--;
-                            if (count_cols == 0)
-                                prev_char = ' ';
-                            else
-                                prev_char = 127; // del/backspace
-                        }
-                        else
-                        {
-                            if (count_rows > 0)
-                            {
-                                count_rows--;
-                                count_cols = strlen(m_cli_buffer[count_rows]);
-                                prev_char = 127; // del/backspace
-                            }
-                        }
-                    }
-                }
-
                 ret = app_usbd_cdc_acm_write(&usb_cdc_acm,
                                              m_rx_buffer,
                                              READ_SIZE);
             }
+
             /* Fetch data until internal buffer is empty */
             ret = app_usbd_cdc_acm_read(&usb_cdc_acm,
                                         m_rx_buffer,
                                         READ_SIZE);
         } while (ret == NRF_SUCCESS);
+
         break;
     }
     default:
         break;
     }
+}
+
+int token_idx = 0, char_idx = 0;
+static char prev_char = DELIMITER;
+static bool received_command = false;
+
+// Create an array just like an argv
+static void parser(char input)
+{
+    if (input == '\r' || input == '\n') // newline characters
+    {
+        received_command = true;
+        m_cli_buffer[token_idx][char_idx] = '\0'; // put nullchar at the end of the line
+        if (prev_char != DELIMITER)               // prev_char == DELIMITER only when current row(line) is empty
+        {
+            token_idx++; // convert idx to number of tokens, just like argc
+        }
+        return;
+    }
+
+    if (input == DELIMITER)
+    {
+        if (prev_char != DELIMITER) // if encountered DELIMITER start new line(end of token), but if already on new_line then skip(continue) char
+        {
+            m_cli_buffer[token_idx++][char_idx] = '\0'; // put nullchar at the end of the line
+            char_idx = 0;                               // start new line
+            prev_char = DELIMITER;
+        }
+        return;
+    }
+
+    if (input != DELETE) // if input is not a special character like NEWLINE or DELIMITER or DELETE
+    {
+        m_cli_buffer[token_idx][char_idx++] = input;
+        prev_char = input;
+        return;
+    }
+
+    // if input is DELETE
+    if (char_idx > 0)
+    {
+        char_idx--;
+        if (char_idx == 0)         // if on empty line
+            prev_char = DELIMITER; // then prev_char must be DELIMITER
+        else
+            prev_char = DELETE; // if not on empty line, no need to know prev_char
+        return;
+    }
+
+    // if input is DELETE and cursor on empty line
+    if (token_idx > 0) // if there are more lines behind, jump back, ignore if no not empty lines left, cursor at the start
+    {
+        token_idx--;
+        char_idx = strlen(m_cli_buffer[token_idx]); // put cursor at the end of the line you came back
+        prev_char = DELETE;
+    }
+    return;
 }
 
 static void unknown_command(void)
@@ -169,14 +184,6 @@ static void help_command(void)
                                          "list_colors\r\n"
                                          "help - print information about supported commands.\r\n",
                            348);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "RGB <red> <green> <blue> - the device sets current color to specified one.\r\n", 77);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "HSV <hur> <saturation> <value> - the same with RGB, but color is specified in HSV.\r\n", 85);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "add_rgb_color <r> <g> <b> <color_name>\r\n", 41);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "add_current_color <color_name>\r\n", 33);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "del_color <color_name>\r\n", 25);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "apply_color <color_name>\r\n", 27);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "list_colors\r\n", 14);
-    // app_usbd_cdc_acm_write(&usb_cdc_acm, "help - print information about supported commands.\r\n", 53);
 }
 
 my_command_t determine_command(void)
@@ -256,18 +263,11 @@ void list_colors_command()
     for (uint32_t i = 0; i < n_list_elem; i++)
     {
         // list all colors in format "name  red  green  blue"
-        app_usbd_cdc_acm_write(&usb_cdc_acm, colors_list[i].name, strlen(colors_list[i].name));
-        app_usbd_cdc_acm_write(&usb_cdc_acm, " ", 1);
-        char buffer[4] = {'\0'};
-        int a = snprintf(buffer, 4, "%lu", colors_list[i].red);
+        char buffer[34] = {0};
+
+        int a = snprintf(buffer, sizeof(buffer), "%s %lu %lu %lu\r\n", colors_list[i].name, 
+        colors_list[i].red, colors_list[i].green, colors_list[i].blue);
         app_usbd_cdc_acm_write(&usb_cdc_acm, buffer, a);
-        app_usbd_cdc_acm_write(&usb_cdc_acm, " ", 1);
-        a = snprintf(buffer, 4, "%lu", colors_list[i].green);
-        app_usbd_cdc_acm_write(&usb_cdc_acm, buffer, a);
-        app_usbd_cdc_acm_write(&usb_cdc_acm, " ", 1);
-        a = snprintf(buffer, 4, "%lu", colors_list[i].blue);
-        app_usbd_cdc_acm_write(&usb_cdc_acm, buffer, a);
-        app_usbd_cdc_acm_write(&usb_cdc_acm, "\r\n", 2);
     }
 }
 
@@ -341,11 +341,13 @@ void apply_color_command(char argv[10][20], uint32_t argc)
 
 void cli_process(void)
 {
+    uint32_t token_n = token_idx; // number of tokens
+
     if (received_command)
     {
-        NRF_LOG_INFO("count_rows = %u", count_rows);
+        NRF_LOG_INFO("number of tokens = %u", token_n);
 
-        for (uint32_t i = 0; i < count_rows; i++)
+        for (uint32_t i = 0; i < token_n; i++)
         {
             NRF_LOG_INFO("length of buffer[%u] = %d", i, strlen(m_cli_buffer[i]));
             NRF_LOG_INFO("buffer[%u] = %s", i, m_cli_buffer[i]);
@@ -359,27 +361,27 @@ void cli_process(void)
             break;
         case RGB:
             NRF_LOG_INFO("rgb");
-            rgb_command(m_cli_buffer, count_rows);
+            rgb_command(m_cli_buffer, token_n);
             break;
         case HSV:
             NRF_LOG_INFO("hsv");
-            hsv_command(m_cli_buffer, count_rows);
+            hsv_command(m_cli_buffer, token_n);
             break;
         case ADD_RGB_COLOR:
             NRF_LOG_INFO("add rgb color");
-            add_rgb_color_command(m_cli_buffer, count_rows);
+            add_rgb_color_command(m_cli_buffer, token_n);
             break;
         case ADD_CURRENT_COLOR:
             NRF_LOG_INFO("add current color");
-            add_current_color_command(m_cli_buffer, count_rows);
+            add_current_color_command(m_cli_buffer, token_n);
             break;
         case DEL_COLOR:
             NRF_LOG_INFO("del color");
-            del_color_command(m_cli_buffer, count_rows);
+            del_color_command(m_cli_buffer, token_n);
             break;
         case APPLY_COLOR:
             NRF_LOG_INFO("apply color");
-            apply_color_command(m_cli_buffer, count_rows);
+            apply_color_command(m_cli_buffer, token_n);
             break;
         case LIST_COLORS:
             NRF_LOG_INFO("list colors");
@@ -391,9 +393,9 @@ void cli_process(void)
             break;
         }
 
-        count_rows = 0;
-        count_cols = 0;
-        prev_char = ' ';
+        token_idx = 0;
+        char_idx = 0;
+        prev_char = DELIMITER;
         received_command = false;
     }
 }
@@ -403,4 +405,9 @@ void cli_init(void)
     app_usbd_class_inst_t const *class_cdc_acm = app_usbd_cdc_acm_class_inst_get(&usb_cdc_acm);
     ret_code_t ret = app_usbd_class_append(class_cdc_acm);
     APP_ERROR_CHECK(ret);
+
+    token_idx = 0;
+    char_idx = 0;
+    prev_char = DELIMITER;
+    received_command = false;
 }

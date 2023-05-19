@@ -11,6 +11,7 @@
 #include "app_timer.h"
 #include "nrf_log.h"
 #include "app_usbd.h"
+#include "nrf_pwr_mgmt.h"
 
 #define SLEEP_TIME_MS 500
 
@@ -34,16 +35,18 @@ int main(void)
 
   while (true)
   {
+
 // process cli
 #if (ESTC_USB_CLI_ENABLED == 1)
-    app_usbd_event_queue_process();
+    while (app_usbd_event_queue_process())
+      ;
     cli_process();
 #endif
 
     // flush all buffered logs
     send_logs();
 
-    //__WFI();
+    nrf_pwr_mgmt_run();
   }
 }
 
@@ -86,4 +89,11 @@ void timeout_wake_up_handler(void *p_context)
     NRF_LOG_INFO("red: %u, green: %u, blue: %u\n",
                  red, green, blue);
   }
+}
+
+void power_management_init(void)
+{
+  ret_code_t err_code;
+  err_code = nrf_pwr_mgmt_init();
+  APP_ERROR_CHECK(err_code);
 }
